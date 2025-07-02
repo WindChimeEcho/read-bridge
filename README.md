@@ -54,7 +54,7 @@ The video also introduced the story of Hungarian linguist Lomb Kato, who mastere
    ```bash
    git clone https://github.com/WindChimeEcho/read-bridge.git
    cd read-bridge
-```
+   ```
 
 2. Install dependencies
    ```bash

@@ -54,12 +54,12 @@ ReadBridge的灵感来自我在一次刷视频时的偶然发现，这个视频�
    ```bash
    git clone https://github.com/WindChimeEcho/read-bridge.git
    cd read-bridge
-```
+   ```
 
 2. 安装依赖
    ```bash
    npm install
-```
+   ```
 
 3. 启动开发服务器
    ```bash

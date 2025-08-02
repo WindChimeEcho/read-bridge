@@ -200,5 +200,10 @@
     "importFailed": "{fileName} 文件导入失败",
     "importFailedWithError": "{fileName} 文件导入失败，{error}",
     "importSuccess": "{fileName} 文件导入成功"
+  },
+  "fontSize": {
+    "small": "小",
+    "medium": "中",
+    "large": "大"
   }
 }

@@ -198,5 +198,10 @@
     "importFailed": "Failed to import {fileName}",
     "importFailedWithError": "Failed to import {fileName}: {error}",
     "importSuccess": "{fileName} imported successfully"
+  },
+  "fontSize": {
+    "small": "S",
+    "medium": "M", 
+    "large": "L"
   }
 }

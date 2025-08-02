@@ -3,9 +3,12 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import db from "@/services/DB"
 import { EVENT_NAMES, EventEmitter } from "@/services/EventService"
 import { Radio } from "antd"
+import { useStyleStore, FontSize } from "@/store/useStyleStore"
 
 
 export default function ReadArea({ book, readingProgress }: { book: Book, readingProgress: ReadingProgress }) {
+  const { fontSize } = useStyleStore()
+
   const title = useMemo(() => {
     return book.chapterList[readingProgress.currentLocation.chapterIndex]?.title || ''
   }, [book, readingProgress.currentLocation.chapterIndex])
@@ -13,6 +16,18 @@ export default function ReadArea({ book, readingProgress }: { book: Book, readin
   const lines = useMemo(() => {
     return readingProgress.sentenceChapters[readingProgress.currentLocation.chapterIndex] ?? []
   }, [readingProgress.sentenceChapters, readingProgress.currentLocation.chapterIndex])
+
+  const fontSizeClasses = {
+    small: 'text-sm',
+    medium: 'text-lg',
+    large: 'text-xl'
+  }
+
+  const titleFontSizeClasses = {
+    small: 'text-xl',
+    medium: 'text-2xl',
+    large: 'text-3xl'
+  }
 
   const containerRef = useRef<HTMLDivElement>(null)
   const [selectedLine, setSelectedLine] = useState<number>(Infinity)
@@ -117,8 +132,8 @@ export default function ReadArea({ book, readingProgress }: { book: Book, readin
       ref={containerRef}
       className='w-full h-full overflow-auto p-2'
     >
-      <div className="text-2xl font-bold mb-4 ml-8">{title}</div>
-      <div className="text-lg">
+      <div className={`${titleFontSizeClasses[fontSize]} font-bold mb-4 ml-8`}>{title}</div>
+      <div className={fontSizeClasses[fontSize]}>
         {lines.length > 0 && lines.map((sentence, index) => (
           <Line
             sentence={sentence}
@@ -127,6 +142,7 @@ export default function ReadArea({ book, readingProgress }: { book: Book, readin
             key={index}
             handleLineClick={handleLineClick}
             setLineRef={setLineRef}
+            size={fontSize}
           />
         ))}
       </div>
@@ -135,33 +151,39 @@ export default function ReadArea({ book, readingProgress }: { book: Book, readin
 }
 
 // 单行组件，使用memo优化性能
-const Line = React.memo(({ sentence, index, isSelected, handleLineClick, setLineRef }: {
+const Line = React.memo(({ sentence, index, isSelected, handleLineClick, setLineRef, size }: {
   sentence: string,
   index: number,
   isSelected: boolean,
   handleLineClick: (index: number) => void,
-  setLineRef: (element: HTMLDivElement | null, index: number) => void
+  setLineRef: (element: HTMLDivElement | null, index: number) => void,
+  size: FontSize
 }) => {
   if (!sentence) {
     return <div className="h-4" />
   }
+  const radioSizeClasses = {
+    small: 'w-5 h-5 pt-0.5',
+    medium: 'w-6 h-6 pt-[4.5px]',
+    large: 'w-7 h-7 pt-[5px]'
+  }
 
   return (
     <div
-      className={`flex mb-1 group rounded-lg ${isSelected ? 'bg-[var(--ant-color-bg-text-hover)]' : ''} hover:bg-[var(--ant-color-bg-text-hover)]`}
+      className={`flex mb-1 group rounded-lg min-h-[1.5em] ${isSelected ? 'bg-[var(--ant-color-bg-text-hover)]' : ''} hover:bg-[var(--ant-color-bg-text-hover)]`}
       ref={(el) => setLineRef(el, index)}
     >
       <div
-        className={`w-6 flex justify-end items-center`}
+        className={`${radioSizeClasses[size]}  flex justify-center items-center`}
         onClick={() => handleLineClick(index)}
       >
         <Radio
           checked={isSelected}
-          className={isSelected ? "" : "hidden group-hover:block"}
+          className={`${isSelected ? "" : "hidden group-hover:block"}`}
         />
       </div>
       <div className={`mx-1`} />
-      <div className="flex-1">{sentence}</div>
+      <div className="flex-1 leading-relaxed">{sentence}</div>
     </div>
   )
 })

@@ -1,18 +1,22 @@
 'use client';
 
-import { Button, ColorPicker, theme } from 'antd';
+import { Button, ColorPicker, theme, Segmented } from 'antd';
 import { useTheme } from 'next-themes';
-import { useStyleStore } from '@/store/useStyleStore';
+import { useStyleStore, FontSize } from '@/store/useStyleStore';
 import { useEffect, useState } from 'react';
+import { useTranslation } from '@/i18n/useTranslation';
 
 export default function Footer() {
   const { theme: currentTheme } = useTheme();
   const { token } = theme.useToken();
+  const { t } = useTranslation();
   const {
     lightModeTextColor,
     darkModeTextColor,
     setLightModeTextColor,
-    setDarkModeTextColor
+    setDarkModeTextColor,
+    fontSize,
+    setFontSize
   } = useStyleStore();
   const [mounted, setMounted] = useState(false);
   const [tempColor, setTempColor] = useState('');
@@ -34,7 +38,7 @@ export default function Footer() {
 
 
   return (
-    <div className="w-full h-full flex justify-start items-center border-t pl-4 pr-4 " style={{ borderColor: token.colorBorder }}>
+    <div className="w-full h-full flex justify-start items-center border-t pl-4 pr-4 gap-3" style={{ borderColor: token.colorBorder }}>
       <ColorPicker
         value={tempColor}
         size="small"
@@ -49,6 +53,16 @@ export default function Footer() {
             </Button>
           </div>
         )}
+      />
+      <Segmented
+        options={[
+          { label: t('fontSize.small'), value: 'small' as FontSize },
+          { label: t('fontSize.medium'), value: 'medium' as FontSize },
+          { label: t('fontSize.large'), value: 'large' as FontSize }
+        ]}
+        value={fontSize}
+        onChange={setFontSize}
+        size="small"
       />
     </div>
   )

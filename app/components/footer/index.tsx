@@ -38,7 +38,7 @@ export default function Footer() {
 
 
   return (
-    <div className="w-full h-full flex justify-start items-center border-t pl-4 pr-4 gap-3" style={{ borderColor: token.colorBorder }}>
+    <div className="w-full h-full flex justify-start items-center border-t pl-4 pr-4 gap-3 overflow-hidden" style={{ borderColor: token.colorBorder }}>
       <ColorPicker
         value={tempColor}
         size="small"

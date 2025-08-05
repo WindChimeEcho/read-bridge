@@ -84,7 +84,7 @@ export default function Sentences({ sentenceProcessingList }: {
   SentenceProcessing[]
 }) {
   return (
-    <div className="w-full h-[578px] p-4 overflow-y-auto">
+    <div className="w-full flex-1 min-h-0 p-4 overflow-y-auto">
       {
         sentenceProcessingList.map((item) => {
           return (

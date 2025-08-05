@@ -355,7 +355,7 @@ export default function SiderContent() {
   }, [processingSentences, setSentence])
 
   return (
-    <div className="w-full h-full flex flex-col">
+    <div className="w-full h-[calc(100%-32px)] flex flex-col">
       <CurrentSentence
         sentence={sentence}
         handleWord={handleWord}
@@ -365,15 +365,15 @@ export default function SiderContent() {
       />
       <Divider className="my-0" />
       <MenuLine selectedTab={selectedTab} items={items} onTabChange={handleTabChange} />
-      <div className={`${selectedTab === 'sentence-analysis' ? 'block' : 'hidden'}`}>
+      <div className={`${selectedTab === 'sentence-analysis' ? 'flex flex-col flex-1 min-h-0' : 'hidden'}`}>
         {sentenceProcessingList.length > 0 ?
           <Sentences sentenceProcessingList={sentenceProcessingList} />
           : <Empty description={parseModel ? t('sider.noSentenceSelected') : t('sider.noAnalysisModelSelected')} className="flex flex-col items-center justify-center h-[262px]" />}
       </div>
-      {selectedTab === 'word-details' && (
-        (word && parseModel) ? <WordDetails wordDetails={wordDetails} />
-          : <Empty description={parseModel ? t('sider.noWordSelected') : t('sider.noAnalysisModelSelected')} className="flex flex-col items-center justify-center h-[262px]" />
-      )}
+      <div className={`${selectedTab === 'word-details' ? 'flex flex-col flex-1 min-h-0' : 'hidden'}`}>
+        {(word && parseModel) ? <WordDetails wordDetails={wordDetails} />
+          : <Empty description={parseModel ? t('sider.noWordSelected') : t('sider.noAnalysisModelSelected')} className="flex flex-col items-center justify-center h-[262px]" />}
+      </div>
       <Divider className="my-0" />
     </div>
   )

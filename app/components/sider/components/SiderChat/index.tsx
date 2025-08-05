@@ -296,7 +296,7 @@ export default function StandardChat() {
       <Button
         icon={<CommentOutlined />}
         onClick={handleOpenModal}
-        className="m-2 mt-0"
+        className="m-2 mt-0 h-[32px]"
       >
         <span className="flex items-center gap-2">
           {t('sider.chat')}

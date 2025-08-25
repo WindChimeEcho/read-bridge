@@ -3,7 +3,8 @@ import { OUTPUT_TYPE } from "@/constants/prompt"
 import { Collapse } from "antd"
 import { LoadingOutlined } from "@ant-design/icons"
 import { useCallback, useEffect, useState } from "react"
-import MarkdownViewer from "@/app/components/common/MarkdownViewer"
+import ChatMarkdown from "@/app/components/common/ChatMarkdown"
+import { useTheme } from 'next-themes'
 import { CacheItemValue, SentenceProcessing } from "@/types/cache"
 
 import { cacheService } from "@/services/CacheService"
@@ -220,9 +221,10 @@ function ThinkCollapse({ thinkContext }: { thinkContext: string }) {
 
 function MDGenerator({ SentenceProcessing, className }: { SentenceProcessing: SentenceProcessing, className?: string }) {
   const { text, thinkContext } = useThinkGenerator(SentenceProcessing, 'text')
+  const { theme } = useTheme()
   return <div className={className}>
     <ThinkCollapse thinkContext={thinkContext} />
-    <MarkdownViewer content={text} minHeight={380} />
+    <ChatMarkdown content={text} theme={theme as 'light' | 'dark'} className="min-h-[380px]" />
   </div>
 }
 

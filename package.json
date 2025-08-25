@@ -34,7 +34,6 @@
     "remark-breaks": "^4.0.0",
     "remark-gfm": "^4.0.1",
     "remark-math": "^6.0.0",
-    "vditor": "^3.11.0",
     "zustand": "^5.0.3"
   },
   "devDependencies": {

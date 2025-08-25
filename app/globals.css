@@ -1,5 +1,4 @@
 @import 'antd/dist/reset.css';
-@import "vditor/dist/index.css";
 @tailwind base;
 @tailwind components;
 @tailwind utilities;

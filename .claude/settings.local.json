@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(/d:\\learn\\read-bridge\\doc/**)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

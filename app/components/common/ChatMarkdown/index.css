@@ -1,0 +1,89 @@
+/* 精简版 ChatMarkdown 样式 */
+
+.markdown {
+  line-height: 1.6;
+  word-wrap: break-word;
+}
+
+/* 主题变量 */
+.markdown-light {
+  --text-color: #24292f;
+  --bg-color: #ffffff;
+  --code-bg: #f6f8fa;
+  --border-color: #d1d9e0;
+  --link-color: #0969da;
+}
+
+.markdown-dark {
+  --text-color: #e6edf3;
+  --bg-color: #0d1117;
+  --code-bg: #161b22;
+  --border-color: #30363d;
+  --link-color: #58a6ff;
+}
+
+.markdown-light, .markdown-dark {
+  color: var(--text-color);
+  background: var(--bg-color);
+}
+
+/* 核心元素样式 */
+.markdown h1, .markdown h2 {
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 0.3em;
+  margin: 24px 0 16px 0;
+}
+
+.markdown pre {
+  background: var(--code-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 16px;
+  overflow-x: auto;
+  margin: 16px 0;
+}
+
+.markdown .inline-code {
+  background: var(--code-bg);
+  padding: 2px 4px;
+  border-radius: 3px;
+  font-size: 85%;
+}
+
+.markdown blockquote {
+  border-left: 4px solid var(--border-color);
+  padding-left: 16px;
+  margin: 16px 0;
+  opacity: 0.8;
+}
+
+.markdown table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 16px 0;
+}
+
+.markdown th, .markdown td {
+  border: 1px solid var(--border-color);
+  padding: 8px 12px;
+}
+
+.markdown th {
+  background: var(--code-bg);
+  font-weight: 600;
+}
+
+.markdown a {
+  color: var(--link-color);
+  text-decoration: none;
+}
+
+.markdown a:hover {
+  text-decoration: underline;
+}
+
+/* 数学公式 */
+.katex-display {
+  margin: 1em 0;
+  text-align: center;
+}

@@ -1,7 +1,7 @@
-import ChatMarkdownWrapper from '@/app/components/common/ChatMarkdownWrapper'
+import MarkdownRendererWrapper from '@/app/components/common/MarkdownRendererWrapper'
 
 export default function WordDetails({ wordDetails }: { wordDetails: string }) {
-  return <ChatMarkdownWrapper content={wordDetails} className="flex-1 min-h-0 overflow-y-auto" />
+  return <MarkdownRendererWrapper content={wordDetails} className="flex-1 min-h-0 overflow-y-auto" />
 }
 
 WordDetails.displayName = 'WordDetails';

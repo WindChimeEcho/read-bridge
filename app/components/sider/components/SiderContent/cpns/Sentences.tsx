@@ -3,7 +3,7 @@ import { OUTPUT_TYPE } from "@/constants/prompt"
 import { Collapse } from "antd"
 import { LoadingOutlined } from "@ant-design/icons"
 import { useCallback, useEffect, useState } from "react"
-import ChatMarkdownWrapper from "@/app/components/common/ChatMarkdownWrapper"
+import MarkdownRendererWrapper from "@/app/components/common/MarkdownRendererWrapper"
 import { CacheItemValue, SentenceProcessing } from "@/types/cache"
 
 import { cacheService } from "@/services/CacheService"
@@ -222,7 +222,7 @@ function MDGenerator({ SentenceProcessing, className }: { SentenceProcessing: Se
   const { text, thinkContext } = useThinkGenerator(SentenceProcessing, 'text')
   return <CardComponent className={className}>
     <ThinkCollapse thinkContext={thinkContext} />
-    <ChatMarkdownWrapper content={text} className="min-h-[180px]" />
+    <MarkdownRendererWrapper content={text} />
   </CardComponent>
 }
 

@@ -1,26 +1,11 @@
 .markdown-wrapper-small {
   font-size: 14px;
-  line-height: 1.5;
 }
 
 .markdown-wrapper-medium {
   font-size: 16px;
-  line-height: 1.5;
 }
 
 .markdown-wrapper-large {
   font-size: 18px;
-  line-height: 1.5;
 }
-
-.markdown-wrapper-small .markdown h1 { font-size: 1.75em; }
-.markdown-wrapper-small .markdown h2 { font-size: 1.5em; }
-.markdown-wrapper-small .markdown h3 { font-size: 1.25em; }
-
-.markdown-wrapper-medium .markdown h1 { font-size: 1.75em; }
-.markdown-wrapper-medium .markdown h2 { font-size: 1.5em; }
-.markdown-wrapper-medium .markdown h3 { font-size: 1.25em; }
-
-.markdown-wrapper-large .markdown h1 { font-size: 1.75em; }
-.markdown-wrapper-large .markdown h2 { font-size: 1.5em; }
-.markdown-wrapper-large .markdown h3 { font-size: 1.25em; }

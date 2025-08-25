@@ -40,7 +40,6 @@ export default function ChatMarkdownWrapper({
     <div 
       className={wrapperClassName}
       style={{ 
-        '--custom-text-color': currentTextColor,
         color: currentTextColor
       } as React.CSSProperties}
     >

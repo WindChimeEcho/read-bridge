@@ -220,9 +220,9 @@ function ThinkCollapse({ thinkContext }: { thinkContext: string }) {
 
 function MDGenerator({ SentenceProcessing, className }: { SentenceProcessing: SentenceProcessing, className?: string }) {
   const { text, thinkContext } = useThinkGenerator(SentenceProcessing, 'text')
-  return <div className={className}>
+  return <CardComponent className={className}>
     <ThinkCollapse thinkContext={thinkContext} />
     <ChatMarkdownWrapper content={text} className="min-h-[180px]" />
-  </div>
+  </CardComponent>
 }
 

@@ -3,14 +3,10 @@
   line-height: 1.6;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   word-wrap: break-word;
-  font-size: 16px;
-  padding: 16px;
 }
 
-/* Light theme */
+/* Light theme variables */
 .markdown-light {
-  color: #24292f;
-  background: #ffffff;
   --code-bg: #f6f8fa;
   --code-border: #d1d9e0;
   --blockquote-border: #d1d9e0;
@@ -18,10 +14,8 @@
   --table-header-bg: #f6f8fa;
 }
 
-/* Dark theme */
+/* Dark theme variables */
 .markdown-dark {
-  color: #e6edf3;
-  background: #0d1117;
   --code-bg: #161b22;
   --code-border: #30363d;
   --blockquote-border: #30363d;

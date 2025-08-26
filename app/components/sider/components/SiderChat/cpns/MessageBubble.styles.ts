@@ -66,9 +66,7 @@ export const createMessageBubbleStyles = ({ isUser, isDarkMode }: MessageBubbleS
     } as CSSProperties,
 
     thinkingPanel: {
-      backgroundColor: isDarkMode 
-        ? `rgba(181, 137, 0, 0.15)` // yellow with opacity
-        : `rgba(181, 137, 0, 0.1)`,
+      backgroundColor: 'transparent',
       border: `1px solid rgba(181, 137, 0, ${isDarkMode ? '0.35' : '0.3'})`,
       borderRadius: '6px',
       overflow: 'hidden'
@@ -92,9 +90,9 @@ export const createMessageBubbleStyles = ({ isUser, isDarkMode }: MessageBubbleS
       lineHeight: '1.5',
       backgroundColor: isUser 
         ? (isDarkMode 
-            ? `rgba(38, 139, 210, 0.15)` // blue with opacity
+            ? '#000000' // pure black
             : `rgba(38, 139, 210, 0.1)`)
-        : (isDarkMode ? colors.base02 : colors.base2),
+        : (isDarkMode ? 'transparent' : colors.base2),
       border: `1px solid ${isUser 
         ? (isDarkMode 
             ? `rgba(38, 139, 210, 0.25)` 

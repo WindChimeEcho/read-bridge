@@ -7,7 +7,7 @@ import { SyncOutlined, LoadingOutlined } from "@ant-design/icons";
 import { CopyIcon } from "@/assets/icon";
 import { useSiderStore } from "@/store/useSiderStore";
 import MarkdownRendererWrapper from "@/app/components/common/MarkdownRendererWrapper";
-import { createMessageBubbleStyles, solarizedColors } from "./MessageBubble.styles";
+import { createMessageBubbleStyles } from "./MessageBubble.styles";
 
 const MessageBubble = memo(function MessageBubble({
   msg,

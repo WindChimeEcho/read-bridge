@@ -37,6 +37,7 @@ export default function StandardChat() {
   const [focusTrigger, setFocusTrigger] = useState(0)
 
   const handleOpenModal = () => {
+    handlePlus()
     setIsModalOpen(true)
     setFocusTrigger(prev => prev + 1)
   }

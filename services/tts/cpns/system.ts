@@ -16,6 +16,7 @@ function getSystemTTS(): TTSAPI {
       if (!isSpeechSynthesisSupported) {
         console.warn('Speech synthesis is not supported in this browser');
         resolve([]);
+        return;
       }
 
       // 获取最新的声音列表
@@ -26,13 +27,21 @@ function getSystemTTS(): TTSAPI {
       } else {
         // 第一次调用返回空时，设置监听器等待 voiceschanged 事件
         const handleVoicesChanged = () => {
+          clearTimeout(timeoutId);
+          window.speechSynthesis.removeEventListener('voiceschanged', handleVoicesChanged);
           resolve(window.speechSynthesis.getVoices());
         };
 
+        // 添加超时机制，防止无限等待
+        const timeoutId = setTimeout(() => {
+          window.speechSynthesis.removeEventListener('voiceschanged', handleVoicesChanged);
+          console.warn('voiceschanged event timeout, returning empty voice list');
+          resolve([]);
+        }, 3000); // 3秒超时
+
         window.speechSynthesis.addEventListener('voiceschanged', handleVoicesChanged);
       }
-    })
-
+    });
   }
   getVoices()
   async function speak(text: string, voiceType: string, speedRatio: number): Promise<void> {

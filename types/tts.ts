@@ -11,7 +11,7 @@ export type TTSAPI = {
   pause: () => void;
   resume: () => void;
   stop: () => void;
-  getVoices: () => Voice[];
+  getVoices: () => Promise<Voice[]>;
   getStatus: () => { isSpeaking: boolean; isPaused: boolean };
 }
 

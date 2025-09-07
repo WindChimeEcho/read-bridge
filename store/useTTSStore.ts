@@ -1,5 +1,4 @@
 import { getSystemTTS, getVolcengineTTS } from '@/services/tts'
-import { TTSAPI } from '@/types/tts'
 import { message } from 'antd'
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'

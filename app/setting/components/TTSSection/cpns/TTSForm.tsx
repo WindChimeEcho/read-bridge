@@ -48,34 +48,34 @@ export default function TTSForm({
 
   // 获取系统可用的声音列表
   useEffect(() => {
-    const voices = TTS.getVoices();
+    TTS.getVoices().then(voices => {
+      // 按语言分组
+      const voicesByLang: Record<string, { label: string, value: string }[]> = {};
+      const voiceLangMap: Record<string, string> = {};
 
-    // 按语言分组
-    const voicesByLang: Record<string, { label: string, value: string }[]> = {};
-    const voiceLangMap: Record<string, string> = {};
+      voices.forEach(voice => {
+        const lang = voice.lang || 'Unknown';
+        if (!voicesByLang[lang]) {
+          voicesByLang[lang] = [];
+        }
+        voicesByLang[lang].push({
+          label: voice.name,
+          value: voice.name
+        });
 
-    voices.forEach(voice => {
-      const lang = voice.lang || 'Unknown';
-      if (!voicesByLang[lang]) {
-        voicesByLang[lang] = [];
-      }
-      voicesByLang[lang].push({
-        label: voice.name,
-        value: voice.name
+        // 保存每个声音对应的语言
+        voiceLangMap[voice.name] = lang;
       });
 
-      // 保存每个声音对应的语言
-      voiceLangMap[voice.name] = lang;
-    });
+      // 转换为分组后的选项
+      setVoiceOptions(Object.entries(voicesByLang).map(([lang, voices]) => ({
+        label: lang,
+        options: voices
+      })));
 
-    // 转换为分组后的选项
-    setVoiceOptions(Object.entries(voicesByLang).map(([lang, voices]) => ({
-      label: lang,
-      options: voices
-    })));
-
-    // 保存声音到语言的映射
-    setVoiceLanguageMap(voiceLangMap);
+      // 保存声音到语言的映射
+      setVoiceLanguageMap(voiceLangMap);
+    })
   }, [TTS]);
 
   // 处理声音类型变更

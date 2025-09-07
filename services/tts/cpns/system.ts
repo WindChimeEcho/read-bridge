@@ -6,40 +6,36 @@ function getSystemTTS(): TTSAPI {
     'speechSynthesis' in window &&
     'SpeechSynthesisUtterance' in window;
 
-  // 本地存储声音列表
-  let voices: Voice[] = [];
-  let isVoicesListenerAdded = false;
-
   // 判断是否正在播放语音
   let isSpeaking = false;
   // 判断是否暂停
   let isPaused = false;
 
-  function getVoices(): Voice[] {
-    if (!isSpeechSynthesisSupported) {
-      console.warn('Speech synthesis is not supported in this browser');
-      return [];
-    }
+  async function getVoices(): Promise<Voice[]> {
+    return new Promise((resolve) => {
+      if (!isSpeechSynthesisSupported) {
+        console.warn('Speech synthesis is not supported in this browser');
+        resolve([]);
+      }
 
-    // 获取最新的声音列表
-    const synthVoices = window.speechSynthesis.getVoices();
+      // 获取最新的声音列表
+      const synthVoices = window.speechSynthesis.getVoices();
 
-    if (synthVoices.length > 0) {
-      voices = synthVoices;
-    } else if (!isVoicesListenerAdded) {
-      // 第一次调用返回空时，设置监听器等待 voiceschanged 事件
-      const handleVoicesChanged = () => {
-        voices = window.speechSynthesis.getVoices();
-      };
+      if (synthVoices.length > 0) {
+        resolve(synthVoices);
+      } else {
+        // 第一次调用返回空时，设置监听器等待 voiceschanged 事件
+        const handleVoicesChanged = () => {
+          resolve(window.speechSynthesis.getVoices());
+        };
 
-      window.speechSynthesis.addEventListener('voiceschanged', handleVoicesChanged);
-      isVoicesListenerAdded = true;
-    }
+        window.speechSynthesis.addEventListener('voiceschanged', handleVoicesChanged);
+      }
+    })
 
-    return voices;
   }
   getVoices()
-  function speak(text: string, voiceType: string, speedRatio: number): void {
+  async function speak(text: string, voiceType: string, speedRatio: number): Promise<void> {
     if (!isSpeechSynthesisSupported) {
       console.warn('Speech synthesis is not supported in this browser');
       return;
@@ -50,11 +46,7 @@ function getSystemTTS(): TTSAPI {
     isPaused = false;
 
     const utterance = new SpeechSynthesisUtterance(text);
-
-    // 确保已获取最新的声音列表
-    if (voices.length === 0) {
-      voices = getVoices();
-    }
+    const voices = await getVoices();
 
     // 查找请求的声音类型
     const voice = voices.find(v => v.name === voiceType);

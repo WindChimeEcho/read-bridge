@@ -2,8 +2,8 @@ import { TTSAPI, Voice } from "@/types/tts";
 
 function getVolcengineTTS(token: string, appid: string): TTSAPI {
 
-  function getVoices(): Voice[] {
-    return []
+  function getVoices(): Promise<Voice[]> {
+    return Promise.resolve([])
   }
 
   function speak(text: string, voiceType: string, speedRatio: number): void {

@@ -8,17 +8,7 @@ function getSystemTTS(): TTSAPI {
 
   // 本地存储声音列表
   let voices: Voice[] = [];
-
-  // 当声音列表准备好时加载
-  if (isSpeechSynthesisSupported) {
-    voices = window.speechSynthesis.getVoices();
-
-    if (voices.length === 0) {
-      window.speechSynthesis.addEventListener('voiceschanged', () => {
-        voices = window.speechSynthesis.getVoices();
-      });
-    }
-  }
+  let isVoicesListenerAdded = false;
 
   // 判断是否正在播放语音
   let isSpeaking = false;
@@ -32,13 +22,23 @@ function getSystemTTS(): TTSAPI {
     }
 
     // 获取最新的声音列表
-    if (voices.length === 0) {
-      voices = window.speechSynthesis.getVoices();
+    const synthVoices = window.speechSynthesis.getVoices();
+
+    if (synthVoices.length > 0) {
+      voices = synthVoices;
+    } else if (!isVoicesListenerAdded) {
+      // 第一次调用返回空时，设置监听器等待 voiceschanged 事件
+      const handleVoicesChanged = () => {
+        voices = window.speechSynthesis.getVoices();
+      };
+
+      window.speechSynthesis.addEventListener('voiceschanged', handleVoicesChanged);
+      isVoicesListenerAdded = true;
     }
 
     return voices;
   }
-
+  getVoices()
   function speak(text: string, voiceType: string, speedRatio: number): void {
     if (!isSpeechSynthesisSupported) {
       console.warn('Speech synthesis is not supported in this browser');
@@ -53,7 +53,7 @@ function getSystemTTS(): TTSAPI {
 
     // 确保已获取最新的声音列表
     if (voices.length === 0) {
-      voices = window.speechSynthesis.getVoices();
+      voices = getVoices();
     }
 
     // 查找请求的声音类型

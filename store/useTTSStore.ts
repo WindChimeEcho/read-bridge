@@ -43,7 +43,7 @@ export const useTTSStore = create<TTSStore>()(
 
       ttsConfig: {
         system: {
-          voiceType: 'Google US English',
+          voiceType: '',
           speedRatio: 1.0,
         },
         volcengine: {

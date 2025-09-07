@@ -68,10 +68,24 @@ export default function TTSForm({
       });
 
       // 转换为分组后的选项
-      setVoiceOptions(Object.entries(voicesByLang).map(([lang, voices]) => ({
+      const allOptions = Object.entries(voicesByLang).map(([lang, voices]) => ({
         label: lang,
         options: voices
-      })));
+      }));
+      
+      // 一次遍历分类，将 en-US 和 zh-CN 移到最前面
+      const priorityOptions: typeof allOptions = [];
+      const otherOptions: typeof allOptions = [];
+      
+      allOptions.forEach(opt => {
+        if (opt.label === 'en-US' || opt.label === 'zh-CN') {
+          priorityOptions.push(opt);
+        } else {
+          otherOptions.push(opt);
+        }
+      });
+      
+      setVoiceOptions([...priorityOptions, ...otherOptions]);
 
       // 保存声音到语言的映射
       setVoiceLanguageMap(voiceLangMap);

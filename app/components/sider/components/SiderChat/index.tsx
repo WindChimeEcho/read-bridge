@@ -259,6 +259,7 @@ export default function StandardChat() {
       setHistory((prev) => {
         const newHistory = {
           ...prev,
+          title: input.length > 10 ? input.slice(0, 10) + '...' : input,
           messages: [...prev.messages, { role: 'user', content: input, timestamp: dayjs().unix() }]
         } as LLMHistory
         resolve(newHistory)

@@ -97,7 +97,7 @@ export const useHistoryStore = create<HistoryStore>()(
           const historyDate = new Date(history.timestamp)
           for (let i = 0; i < timeGroups.length; i++) {
             if (timeGroups[i].filter(historyDate)) {
-              groups[i].items.push(history)
+              groups[i].items.unshift(history)
               break
             }
           }

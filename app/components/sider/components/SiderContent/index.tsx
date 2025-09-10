@@ -10,6 +10,7 @@ import { assemblePrompt, contextMessages, INPUT_PROMPT, OUTPUT_TYPE } from "@/co
 import { OUTPUT_PROMPT } from "@/constants/prompt"
 import { useTranslation } from "@/i18n/useTranslation"
 import { useTTSStore } from "@/store/useTTSStore"
+import { createTTSSpeak } from "@/services/ttsService"
 import { useTheme } from 'next-themes'
 import { ReadingProgress } from "@/types/book"
 import { SentenceProcessing } from "@/types/cache"
@@ -123,14 +124,15 @@ export default function SiderContent() {
   }, [wordOptions, selectedWordId])
 
   const { parseModel } = useLLMStore()
-  const { getSpeak, ttsGlobalConfig, ttsConfig } = useTTSStore()
+  const { ttsProvider, ttsGlobalConfig, ttsConfig } = useTTSStore()
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+  // 创建TTS服务实例
   const speak = useMemo(() => {
     if (ttsGlobalConfig.autoSentenceTTS || ttsGlobalConfig.autoWordTTS) {
-      return getSpeak()
+      return createTTSSpeak(ttsProvider, ttsConfig)
     } else return null
-  }, [getSpeak, ttsGlobalConfig.autoSentenceTTS, ttsGlobalConfig.autoWordTTS, ttsConfig])
+  }, [ttsProvider, ttsConfig, ttsGlobalConfig.autoSentenceTTS, ttsGlobalConfig.autoWordTTS])
+
   const controllerRef = useRef<AbortController | null>(null);
   const defaultLLMClient = useMemo(() => {
     return parseModel

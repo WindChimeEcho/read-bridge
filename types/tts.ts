@@ -19,3 +19,16 @@ export type Voice = {
   lang: string;
   name: string;
 }
+
+export interface TTSConfig {
+  system: {
+    voiceType: string
+    speedRatio: number
+  }
+  volcengine: {
+    voiceType: string
+    speedRatio: number
+    appid: string
+    token: string
+  }
+}

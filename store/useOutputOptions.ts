@@ -27,12 +27,6 @@ function defaultSentenceOutputOption(): OutputOption[] {
     },
     {
       id: generateUUID(),
-      name: 'Sentence Analysis',
-      type: OUTPUT_TYPE.MD,
-      rulePrompt: INPUT_PROMPT.MD_SENTENCE_ANALYZING,
-    },
-    {
-      id: generateUUID(),
       name: 'Sentence Simplification',
       type: OUTPUT_TYPE.MD,
       rulePrompt: INPUT_PROMPT.MD_SENTENCE_SIMPLIFICATION,

@@ -4,7 +4,7 @@ import db from "@/services/DB"
 import { EVENT_NAMES, EventEmitter } from "@/services/EventService"
 import { Radio } from "antd"
 import { useStyleStore, FontSize } from "@/store/useStyleStore"
-
+import ChatMarkdownWrapper from "@/app/components/common/MarkdownRendererWrapper"
 
 export default function ReadArea({ book, readingProgress }: { book: Book, readingProgress: ReadingProgress }) {
   const { fontSize } = useStyleStore()
@@ -150,6 +150,17 @@ export default function ReadArea({ book, readingProgress }: { book: Book, readin
   )
 }
 
+// 解析图片标记：![IMG]alt|src 或 ![IMG]src
+function parseImageLine(sentence: string): { src: string; alt: string } | null {
+  if (!sentence.startsWith('![IMG]')) return null
+  const content = sentence.slice(6) // 去掉 '![IMG]'
+  const pipeIndex = content.indexOf('|')
+  if (pipeIndex > 0) {
+    return { alt: content.slice(0, pipeIndex), src: content.slice(pipeIndex + 1) }
+  }
+  return { alt: '', src: content }
+}
+
 // 单行组件，使用memo优化性能
 const Line = React.memo(({ sentence, index, isSelected, handleLineClick, setLineRef, size }: {
   sentence: string,
@@ -162,12 +173,76 @@ const Line = React.memo(({ sentence, index, isSelected, handleLineClick, setLine
   if (!sentence) {
     return <div className="h-4" />
   }
+
+  const imageInfo = parseImageLine(sentence)
+
   const radioSizeClasses = {
     small: 'w-5 h-5 pt-0.5',
     medium: 'w-6 h-6 pt-[4.5px]',
     large: 'w-7 h-7 pt-[5px]'
   }
 
+  // 图片行
+  if (imageInfo) {
+    return (
+      <div
+        className={`flex mb-4 group rounded-lg ${isSelected ? 'bg-[var(--ant-color-bg-text-hover)]' : ''} hover:bg-[var(--ant-color-bg-text-hover)]`}
+        ref={(el) => setLineRef(el, index)}
+      >
+        <div
+          className={`${radioSizeClasses[size]} flex justify-center items-start mt-2`}
+          onClick={() => handleLineClick(index)}
+        >
+          <Radio
+            checked={isSelected}
+            className={`${isSelected ? "" : "hidden group-hover:block"}`}
+          />
+        </div>
+        <div className={`mx-1`} />
+        <div className="flex-1 py-2">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={imageInfo.src}
+            alt={imageInfo.alt}
+            className="max-w-full h-auto rounded-md shadow-sm"
+            style={{ maxHeight: '500px', objectFit: 'contain' }}
+            loading="lazy"
+            referrerPolicy="no-referrer"
+          />
+          {imageInfo.alt && (
+            <div className="text-xs text-gray-400 mt-2 text-center">{imageInfo.alt}</div>
+          )}
+        </div>
+      </div>
+    )
+  }
+
+  // Markdown (表格/代码块等)
+  if (sentence.startsWith('![MD]')) {
+    const mdContent = sentence.slice(5) // 去掉 '![MD]'
+    return (
+      <div
+        className={`flex mb-4 group rounded-lg ${isSelected ? 'bg-[var(--ant-color-bg-text-hover)]' : ''} hover:bg-[var(--ant-color-bg-text-hover)]`}
+        ref={(el) => setLineRef(el, index)}
+      >
+        <div
+          className={`${radioSizeClasses[size]} flex justify-center items-start mt-2`}
+          onClick={() => handleLineClick(index)}
+        >
+          <Radio
+            checked={isSelected}
+            className={`${isSelected ? "" : "hidden group-hover:block"}`}
+          />
+        </div>
+        <div className={`mx-1`} />
+        <div className="flex-1 py-2 overflow-x-auto w-0">
+          <ChatMarkdownWrapper content={mdContent} />
+        </div>
+      </div>
+    )
+  }
+
+  // 普通文本行
   return (
     <div
       className={`flex mb-1 group rounded-lg min-h-[1.5em] ${isSelected ? 'bg-[var(--ant-color-bg-text-hover)]' : ''} hover:bg-[var(--ant-color-bg-text-hover)]`}

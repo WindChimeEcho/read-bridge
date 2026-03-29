@@ -321,6 +321,12 @@ function paragraphs2Lines(book: Book, chapterIndex: number): string[] {
 
   const allSentences: string[] = []
   paragraphs.forEach(paragraph => {
+    // 图片段落或Markdown不拆句，整段保留
+    if (paragraph.startsWith('![IMG]') || paragraph.startsWith('![MD]')) {
+      allSentences.push(paragraph, 'EOB')
+      return
+    }
+
     // 判断是否主要为中文文本
     const isChinese = /[\u4e00-\u9fa5]/.test(paragraph)
     let sentences: string[] = []

@@ -57,7 +57,8 @@ function createBookModel(formattedBook: FormattedBook, hash: string): Book {
     chapterList: formattedBook.chapterList,
     toc: formattedBook.chapterList.map((chapter, index) => ({
       title: chapter.title,
-      index
+      index,
+      level: chapter.level || 1
     })),
     metadata: formattedBook.metadata
   }

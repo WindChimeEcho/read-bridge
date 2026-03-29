@@ -27,10 +27,12 @@ export interface FormattedBook {
 export interface PlainTextChapter {
   title: string;
   paragraphs: string[];
+  level?: number;
 }
 interface TocItem {
   title: string;
   index: number;
+  level?: number;
 }
 
 export interface Book {

@@ -22,11 +22,28 @@ const renderTocMenu = (
   onChapterChange: (index: number, lineIndex: number) => void,
   collapsed: boolean
 ) => {
-  const menuItems = toc.map(({ title, index }) => ({
-    key: index,
-    label: collapsed ? index + 1 : title,
-    title: title
-  }))
+  const menuItems = toc.map(({ title, index, level }) => {
+    const lvl = level || 1
+    const indent = collapsed ? 0 : (lvl - 1) * 12
+
+    return {
+      key: index,
+      label: collapsed ? index + 1 : (
+        <div 
+          style={{ 
+            paddingLeft: `${indent}px`,
+            fontSize: lvl === 1 ? '14px' : '13px',
+            fontWeight: lvl === 1 ? 600 : 'normal',
+            opacity: lvl > 1 ? 0.85 : 1
+          }} 
+          className="truncate"
+        >
+          {title}
+        </div>
+      ),
+      title: title
+    }
+  })
 
   return (
     <Menu

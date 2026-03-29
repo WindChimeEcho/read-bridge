@@ -11,61 +11,58 @@ export function initMDBook(buffer: Buffer, name: string): FormattedBook {
   const title = $('h1').text() || name
   const language = detectLanguage(mdString.slice(0, 500))
 
-  // 将h3和h4转换为普通段落
-  $('h3, h4, h5').each((_, elem) => {
-    const content = $(elem).html() || ''
-    $(elem).replaceWith(`<p>${content}</p>`)
-  })
-
   const chapterList: PlainTextChapter[] = []
 
-  // 找到所有h2元素
-  const h2Elements = $('h2')
+  // 找到所有顶层标题元素 (h1~h6)
+  const headingElements = $('body > h1, body > h2, body > h3, body > h4, body > h5, body > h6')
 
-  if (h2Elements.length === 0) {
-    // 如果没有h2元素，将整个内容作为一个章节
+  if (headingElements.length === 0) {
+    // 如果没有标题元素，将整个内容作为一个章节
     const content = $('body').html() || ''
     // 把HTML内容转换为段落数组
     const paragraphs = extractParagraphs($, content)
 
     chapterList.push({
       title: title,
-      paragraphs
+      paragraphs,
+      level: 1
     })
   } else {
-    // 检查第一个h2之前的内容（保留文章开头的引言/前言）
+    // 检查第一个标题之前的内容（保留文章开头的引言/前言）
     const $bodyChildren = $('body').children()
-    const firstH2Index = $bodyChildren.index(h2Elements.first())
-    if (firstH2Index > 0) {
-      const beforeH2 = $bodyChildren.slice(0, firstH2Index)
-      const content = beforeH2.map((_, el) => $.html(el)).get().join('')
+    const firstHeadingIndex = $bodyChildren.index(headingElements.first())
+    if (firstHeadingIndex > 0) {
+      const beforeHeading = $bodyChildren.slice(0, firstHeadingIndex)
+      const content = beforeHeading.map((_, el) => $.html(el)).get().join('')
       const paragraphs = extractParagraphs($, content)
       if (paragraphs.length > 0) {
         chapterList.push({
           title: title || '引言',
-          paragraphs
+          paragraphs,
+          level: 1
         })
       }
     }
 
-    // 根据h2元素分割内容
-    h2Elements.each((_, elem) => {
+    // 根据标题元素分割内容
+    headingElements.each((_, elem) => {
       const chapterTitle = $(elem).text()
+      const level = parseInt(elem.tagName.replace(/h/i, ''), 10) || 1
       let content = ''
 
-      // 获取当前h2元素
+      // 获取当前标题元素
       const $elem = $(elem)
 
-      // 获取当前h2到下一个h2之间的内容
+      // 获取当前标题到下一个顶层标题之间的内容
       let $nextAll = $elem.nextAll()
-      let $nextH2 = $nextAll.filter('h2').first()
+      let $nextHeading = $nextAll.filter('h1, h2, h3, h4, h5, h6').first()
 
-      if ($nextH2.length > 0) {
-        // 获取到下一个h2之前的所有元素
-        let $contents = $nextAll.slice(0, $nextAll.index($nextH2))
+      if ($nextHeading.length > 0) {
+        // 获取到下一个标题之前的所有元素
+        let $contents = $nextAll.slice(0, $nextAll.index($nextHeading))
         content = $contents.map((_, el) => $.html(el)).get().join('')
       } else {
-        // 如果没有下一个h2，获取当前h2后面的所有内容
+        // 如果没有下一个标题，获取当前标题后面的所有内容
         content = $nextAll.map((_, el) => $.html(el)).get().join('')
       }
 
@@ -74,7 +71,8 @@ export function initMDBook(buffer: Buffer, name: string): FormattedBook {
 
       chapterList.push({
         title: chapterTitle,
-        paragraphs
+        paragraphs,
+        level
       })
     })
   }

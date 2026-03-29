@@ -2,7 +2,8 @@ import { Book, ReadingProgress } from "@/types/book"
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import db from "@/services/DB"
 import { EVENT_NAMES, EventEmitter } from "@/services/EventService"
-import { Radio } from "antd"
+import { Radio, Image } from "antd"
+import { ZoomInOutlined } from "@ant-design/icons"
 import { useStyleStore, FontSize } from "@/store/useStyleStore"
 import ChatMarkdownWrapper from "@/app/components/common/MarkdownRendererWrapper"
 
@@ -170,6 +171,8 @@ const Line = React.memo(({ sentence, index, isSelected, handleLineClick, setLine
   setLineRef: (element: HTMLDivElement | null, index: number) => void,
   size: FontSize
 }) => {
+  const [previewVisible, setPreviewVisible] = useState(false)
+
   if (!sentence) {
     return <div className="h-4" />
   }
@@ -191,23 +194,31 @@ const Line = React.memo(({ sentence, index, isSelected, handleLineClick, setLine
       >
         <div
           className={`${radioSizeClasses[size]} flex justify-center items-start mt-2`}
-          onClick={() => handleLineClick(index)}
         >
-          <Radio
-            checked={isSelected}
-            className={`${isSelected ? "" : "hidden group-hover:block"}`}
-          />
+          <div 
+            className="cursor-pointer text-gray-400 hover:text-blue-500 transition-colors hidden group-hover:block"
+            onClick={(e) => {
+              e.stopPropagation()
+              setPreviewVisible(true)
+            }}
+            title="查看大图"
+          >
+            <ZoomInOutlined style={{ fontSize: '18px' }} />
+          </div>
         </div>
         <div className={`mx-1`} />
         <div className="flex-1 py-2">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
+          <Image
             src={imageInfo.src}
             alt={imageInfo.alt}
-            className="max-w-full h-auto rounded-md shadow-sm"
+            className="max-w-full h-auto rounded-md shadow-sm cursor-zoom-in"
             style={{ maxHeight: '500px', objectFit: 'contain' }}
             loading="lazy"
-            referrerPolicy="no-referrer"
+            preview={{
+              visible: previewVisible,
+              onVisibleChange: (val) => setPreviewVisible(val),
+              mask: <div className="flex items-center gap-2"><ZoomInOutlined /> 查看大图</div>
+            }}
           />
           {imageInfo.alt && (
             <div className="text-xs text-gray-400 mt-2 text-center">{imageInfo.alt}</div>

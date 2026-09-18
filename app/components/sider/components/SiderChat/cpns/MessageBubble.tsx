@@ -38,7 +38,7 @@ const MessageBubble = memo(function MessageBubble({
   }, [isUser])
 
   const hasThinkingContent = !isUser && !!msg.reasoningContent;
-  const isThinking = hasThinkingContent && !msg.thinkingTime;
+  const isThinking = hasThinkingContent && msg.thinkingTime == null;
   const thinkingLabel = isThinking
     ? '思考中...'
     : `思考完成 (用时${msg.thinkingTime}秒)`;

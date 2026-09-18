@@ -51,18 +51,9 @@ export default function BookUploader() {
     fileList,
     customRequest: async (options) => {
       const { file } = options;
-      let fileToUpload = file as File;
-
-      if (fileToUpload.name.endsWith('.md') && !fileToUpload.type) {
-        fileToUpload = new File(
-          [fileToUpload],
-          fileToUpload.name,
-          { type: 'text/markdown' }
-        );
-      }
 
       try {
-        const result = await handleFileUpload(fileToUpload);
+        const result = await handleFileUpload(file as File);
         options.onSuccess?.(result);
       } catch (error) {
         if (error instanceof Error) options.onError?.(error)
@@ -155,4 +146,4 @@ export default function BookUploader() {
       </Dragger>
     </div>
   );
-} 
+}

@@ -2,6 +2,7 @@ import db from '@/services/DB'
 import { ReadingProgress } from '@/types/book'
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
+import { SENTENCE_FORMAT_VERSION } from '@/services/SentenceService'
 
 interface ReadingProgressStore {
   readingProgress: ReadingProgress
@@ -20,6 +21,7 @@ export const useReadingProgressStore = create<ReadingProgressStore>()(
           lineIndex: 0
         },
         sentenceChapters: {},
+        sentenceFormatVersion: SENTENCE_FORMAT_VERSION,
       },
       setReadingProgress: (readingProgress) => set({ readingProgress }),
       updateReadingProgress: async (bookId) => {
@@ -32,4 +34,4 @@ export const useReadingProgressStore = create<ReadingProgressStore>()(
       name: 'reading-progress-storage',
     }
   )
-) 
+)

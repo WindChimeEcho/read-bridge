@@ -5,6 +5,23 @@ import { EVENT_NAMES, EventEmitter } from "@/services/EventService"
 import { Radio } from "antd"
 import { useStyleStore, FontSize } from "@/store/useStyleStore"
 
+const FONT_SIZE_CLASSES: Record<FontSize, string> = {
+  small: 'text-sm',
+  medium: 'text-lg',
+  large: 'text-xl'
+}
+
+const TITLE_FONT_SIZE_CLASSES: Record<FontSize, string> = {
+  small: 'text-xl',
+  medium: 'text-2xl',
+  large: 'text-3xl'
+}
+
+const RADIO_SIZE_CLASSES: Record<FontSize, string> = {
+  small: 'w-5 h-5 pt-0.5',
+  medium: 'w-6 h-6 pt-[4.5px]',
+  large: 'w-7 h-7 pt-[5px]'
+}
 
 export default function ReadArea({ book, readingProgress }: { book: Book, readingProgress: ReadingProgress }) {
   const { fontSize } = useStyleStore()
@@ -17,22 +34,14 @@ export default function ReadArea({ book, readingProgress }: { book: Book, readin
     return readingProgress.sentenceChapters[readingProgress.currentLocation.chapterIndex] ?? []
   }, [readingProgress.sentenceChapters, readingProgress.currentLocation.chapterIndex])
 
-  const fontSizeClasses = {
-    small: 'text-sm',
-    medium: 'text-lg',
-    large: 'text-xl'
-  }
-
-  const titleFontSizeClasses = {
-    small: 'text-xl',
-    medium: 'text-2xl',
-    large: 'text-3xl'
-  }
-
   const containerRef = useRef<HTMLDivElement>(null)
   const [selectedLine, setSelectedLine] = useState<number>(Infinity)
   const lineRefsMap = useRef<Map<number, HTMLDivElement>>(new Map())
-  const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const scrollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  useEffect(() => {
+    setSelectedLine(readingProgress.currentLocation.lineIndex)
+  }, [readingProgress.currentLocation.chapterIndex, readingProgress.currentLocation.lineIndex])
 
   // 页面加载时滚动到上次阅读位置
   useEffect(() => {
@@ -42,7 +51,7 @@ export default function ReadArea({ book, readingProgress }: { book: Book, readin
     const savedLineIndex = readingProgress.currentLocation.lineIndex;
     if (savedLineIndex !== undefined && savedLineIndex !== Infinity && savedLineIndex > 0) {
       // 等待DOM
-      setTimeout(() => {
+      const timer = setTimeout(() => {
         const lineElement = lineRefsMap.current.get(savedLineIndex);
         if (lineElement) {
           lineElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -50,6 +59,7 @@ export default function ReadArea({ book, readingProgress }: { book: Book, readin
           container.scrollTo({ top: 0, behavior: 'smooth' });
         }
       }, 100);
+      return () => clearTimeout(timer)
     } else {
       container.scrollTo({ top: 0, behavior: 'smooth' });
     }
@@ -69,27 +79,16 @@ export default function ReadArea({ book, readingProgress }: { book: Book, readin
         const containerRect = container.getBoundingClientRect();
         const containerTop = containerRect.top + 10;
 
-        // 找出视口中第一个可见的非空行
-        let visibleLineIndex = Infinity;
-
-        for (let i = 0; i < lines.length; i++) {
-          if (!lines[i]) continue;
-
-          const lineElement = lineRefsMap.current.get(i);
-          if (!lineElement) continue;
-
-          const lineRect = lineElement.getBoundingClientRect();
-
-          if (lineRect.bottom >= containerTop &&
-            lineRect.top <= (containerRect.top + containerRect.height)) {
-            visibleLineIndex = i;
-            break;
-          }
-        }
+        const visibleLineIndex = findFirstVisibleLine(
+          lines,
+          lineRefsMap.current,
+          containerTop,
+          containerRect.bottom
+        )
 
         // save
         if (visibleLineIndex !== Infinity && visibleLineIndex >= 0) {
-          db.updateCurrentLocation(book.id, {
+          void db.updateCurrentLocation(book.id, {
             chapterIndex: readingProgress.currentLocation.chapterIndex,
             lineIndex: visibleLineIndex
           });
@@ -110,7 +109,7 @@ export default function ReadArea({ book, readingProgress }: { book: Book, readin
   const handleLineClick = useCallback((index: number) => {
     setSelectedLine((prev) => {
       EventEmitter.emit(EVENT_NAMES.SEND_LINE_INDEX, index);
-      if (prev !== index) db.updateCurrentLocation(book.id, {
+      if (prev !== index) void db.updateCurrentLocation(book.id, {
         chapterIndex: readingProgress.currentLocation.chapterIndex,
         lineIndex: index
       });
@@ -132,8 +131,8 @@ export default function ReadArea({ book, readingProgress }: { book: Book, readin
       ref={containerRef}
       className='w-full h-full overflow-auto p-2'
     >
-      <div className={`${titleFontSizeClasses[fontSize]} font-bold mb-4 ml-8`}>{title}</div>
-      <div className={fontSizeClasses[fontSize]}>
+      <div className={`${TITLE_FONT_SIZE_CLASSES[fontSize]} font-bold mb-4 ml-8`}>{title}</div>
+      <div className={FONT_SIZE_CLASSES[fontSize]}>
         {lines.length > 0 && lines.map((sentence, index) => (
           <Line
             sentence={sentence}
@@ -160,21 +159,17 @@ const Line = React.memo(({ sentence, index, isSelected, handleLineClick, setLine
   size: FontSize
 }) => {
   if (!sentence) {
-    return <div className="h-4" />
-  }
-  const radioSizeClasses = {
-    small: 'w-5 h-5 pt-0.5',
-    medium: 'w-6 h-6 pt-[4.5px]',
-    large: 'w-7 h-7 pt-[5px]'
+    return <div ref={(element) => setLineRef(element, index)} className="h-4" />
   }
 
   return (
     <div
       className={`flex mb-1 group rounded-lg min-h-[1.5em] ${isSelected ? 'bg-[var(--ant-color-bg-text-hover)]' : ''} hover:bg-[var(--ant-color-bg-text-hover)]`}
       ref={(el) => setLineRef(el, index)}
+      style={{ contentVisibility: 'auto', containIntrinsicSize: '1.75em' }}
     >
       <div
-        className={`${radioSizeClasses[size]}  flex justify-center items-center`}
+        className={`${RADIO_SIZE_CLASSES[size]} flex justify-center items-center`}
         onClick={() => handleLineClick(index)}
       >
         <Radio
@@ -188,3 +183,37 @@ const Line = React.memo(({ sentence, index, isSelected, handleLineClick, setLine
   )
 })
 Line.displayName = 'Line'
+
+function findFirstVisibleLine(
+  lines: string[],
+  elements: Map<number, HTMLDivElement>,
+  viewportTop: number,
+  viewportBottom: number
+): number {
+  let lower = 0
+  let upper = lines.length - 1
+  let firstVisible = Infinity
+
+  while (lower <= upper) {
+    const middle = Math.floor((lower + upper) / 2)
+    const element = elements.get(middle)
+    if (!element) break
+
+    if (element.getBoundingClientRect().bottom >= viewportTop) {
+      firstVisible = middle
+      upper = middle - 1
+    } else {
+      lower = middle + 1
+    }
+  }
+
+  for (let index = firstVisible; index < lines.length; index += 1) {
+    const element = elements.get(index)
+    if (!element) continue
+    const rect = element.getBoundingClientRect()
+    if (rect.top > viewportBottom) break
+    if (lines[index] && rect.bottom >= viewportTop) return index
+  }
+
+  return Infinity
+}

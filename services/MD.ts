@@ -1,100 +1,78 @@
 import MarkdownIt from 'markdown-it'
-import * as cheerio from 'cheerio';
-import { FormattedBook, PlainTextChapter } from "@/types/book";
-import { detectLanguage } from '@/utils/franc';
+import * as cheerio from 'cheerio'
+import type { FormattedBook, PlainTextChapter } from '../types/book'
+import { detectLanguage } from '../utils/franc'
 
 export function initMDBook(buffer: Buffer, name: string): FormattedBook {
-  const md = new MarkdownIt()
-  const mdString = buffer.toString()
-  const html = md.render(mdString)
-  const $ = cheerio.load(html)
-  const title = $('h1').text() || name
-  const language = detectLanguage(mdString.slice(0, 500))
+  const source = buffer.toString('utf-8')
+  const tokens = new MarkdownIt().parse(source, {})
+  const chapters: PlainTextChapter[] = []
+  let bookTitle = name
+  let hasExplicitTitle = false
+  let currentChapter: PlainTextChapter = { title: name, paragraphs: [] }
 
-  // 将h3和h4转换为普通段落
-  $('h3, h4, h5').each((_, elem) => {
-    const content = $(elem).html() || ''
-    $(elem).replaceWith(`<p>${content}</p>`)
-  })
+  const startChapter = (title: string) => {
+    if (currentChapter.paragraphs.length > 0) chapters.push(currentChapter)
+    currentChapter = { title, paragraphs: [] }
+  }
 
-  const chapterList: PlainTextChapter[] = []
+  for (let index = 0; index < tokens.length; index += 1) {
+    const token = tokens[index]
 
-  // 找到所有h2元素
-  const h2Elements = $('h2')
+    if (token.type === 'heading_open') {
+      const heading = tokens[index + 1]?.content.trim() ?? ''
 
-  if (h2Elements.length === 0) {
-    // 如果没有h2元素，将整个内容作为一个章节
-    const content = $('body').html() || ''
-    // 把HTML内容转换为段落数组
-    const paragraphs = extractParagraphs($, content)
-
-    chapterList.push({
-      title: title,
-      paragraphs
-    })
-  } else {
-    // 根据h2元素分割内容
-    h2Elements.each((_, elem) => {
-      const chapterTitle = $(elem).text()
-      let content = ''
-
-      // 获取当前h2元素
-      const $elem = $(elem)
-
-      // 获取当前h2到下一个h2之间的内容
-      let $nextAll = $elem.nextAll()
-      let $nextH2 = $nextAll.filter('h2').first()
-
-      if ($nextH2.length > 0) {
-        // 获取到下一个h2之前的所有元素
-        let $contents = $nextAll.slice(0, $nextAll.index($nextH2))
-        content = $contents.map((_, el) => $.html(el)).get().join('')
-      } else {
-        // 如果没有下一个h2，获取当前h2后面的所有内容
-        content = $nextAll.map((_, el) => $.html(el)).get().join('')
+      if (token.tag === 'h1' && heading && !hasExplicitTitle) {
+        bookTitle = heading
+        hasExplicitTitle = true
+        if (chapters.length === 0 && currentChapter.paragraphs.length === 0) {
+          currentChapter.title = heading
+        }
+      } else if (token.tag === 'h2' && heading) {
+        startChapter(heading)
+      } else if (heading) {
+        currentChapter.paragraphs.push(heading)
       }
 
-      // 把HTML内容转换为段落数组
-      const paragraphs = extractParagraphs($, content)
+      index += 2
+      continue
+    }
 
-      chapterList.push({
-        title: chapterTitle,
-        paragraphs
-      })
-    })
+    if (token.type === 'paragraph_open') {
+      addParagraph(currentChapter, tokens[index + 1]?.content)
+      index += 2
+      continue
+    }
+
+    if (token.type === 'fence' || token.type === 'code_block') {
+      addParagraph(currentChapter, token.content)
+      continue
+    }
+
+    if (token.type === 'html_block') {
+      addParagraph(currentChapter, cheerio.load(token.content).text())
+      continue
+    }
+
+    if (token.type === 'inline') {
+      addParagraph(currentChapter, token.content)
+    }
+  }
+
+  if (currentChapter.paragraphs.length > 0 || chapters.length === 0) {
+    chapters.push(currentChapter)
   }
 
   return {
     metadata: {
-      title,
-      language: language
+      title: bookTitle,
+      language: detectLanguage(source.slice(0, 1000)),
     },
-    chapterList
+    chapterList: chapters,
   }
 }
 
-/**
- * 从HTML内容中提取段落
- */
-function extractParagraphs($: cheerio.CheerioAPI, htmlContent: string): string[] {
-  const $content = cheerio.load(htmlContent)
-  const paragraphs: string[] = []
-
-  // 提取所有段落元素
-  $content('p').each((_, elem) => {
-    const text = $content(elem).text().trim()
-    if (text) {
-      paragraphs.push(text)
-    }
-  })
-
-  // 处理其他可能的内容元素（如列表、引用等）
-  $content('li, blockquote').each((_, elem) => {
-    const text = $content(elem).text().trim()
-    if (text) {
-      paragraphs.push(text)
-    }
-  })
-
-  return paragraphs
+function addParagraph(chapter: PlainTextChapter, content?: string) {
+  const text = content?.trim()
+  if (text) chapter.paragraphs.push(text)
 }

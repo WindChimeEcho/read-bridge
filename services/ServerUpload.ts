@@ -21,10 +21,11 @@ export async function handleFileUpload(
     console.error('No file uploaded');
     throw new Error('No file uploaded');
   }
-  const { name, size, type } = file
+  const { name, size } = file
+  const type = getBookMimeType(file)
 
-  if (!isValidBookFormat(type)) {
-    console.error('Invalid file format', type);
+  if (!type) {
+    console.error('Invalid file format', file.type);
     throw new Error('Invalid file format');
   }
 
@@ -55,6 +56,17 @@ export async function handleFileUpload(
   }
 }
 
-function isValidBookFormat(format: string): format is BOOK_MIME_TYPE_TYPE {
-  return Object.values(BOOK_MIME_TYPE).includes(format as BOOK_MIME_TYPE_TYPE);
-} 
+function getBookMimeType(file: File): BOOK_MIME_TYPE_TYPE | null {
+  const extension = file.name.split('.').pop()?.toLowerCase()
+
+  switch (extension) {
+    case 'epub':
+      return BOOK_MIME_TYPE.EPUB_ZIP
+    case 'txt':
+      return BOOK_MIME_TYPE.TXT
+    case 'md':
+      return BOOK_MIME_TYPE.MD
+    default:
+      return null
+  }
+}

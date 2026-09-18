@@ -1,4 +1,4 @@
-import { Form, Input, Button, Typography, Space, Popconfirm, FormInstance } from 'antd';
+import { Form, Input, Button, Typography, Space, Popconfirm, FormInstance, Select, Switch } from 'antd';
 import { PlusOutlined, DeleteOutlined } from '@ant-design/icons';
 import { Provider, Model } from '@/types/llm';
 import ModelCard from './ModelCard';
@@ -49,7 +49,29 @@ const ProviderForm = ({
           <Input placeholder={t('settings.providerName')} />
         </Form.Item>
 
-        <Form.Item name="baseUrl" label={t('settings.baseURL')} tooltip={t('settings.baseURLTooltip')} rules={[{ required: true }]}>
+        <Form.Item name="protocol" label={t('settings.providerProtocol')} rules={[{ required: true }]}>
+          <Select options={[
+            { value: 'openai', label: 'OpenAI' },
+            { value: 'anthropic', label: 'Anthropic' },
+            { value: 'google', label: 'Google Gemini' },
+            { value: 'openai-compatible', label: t('settings.openAICompatible') },
+          ]} />
+        </Form.Item>
+
+        <Form.Item noStyle shouldUpdate={(previous, current) => previous.protocol !== current.protocol}>
+          {({ getFieldValue }) => getFieldValue('protocol') === 'openai-compatible' && (
+            <Form.Item
+              name="supportsStructuredOutputs"
+              label={t('settings.structuredOutputs')}
+              valuePropName="checked"
+              tooltip={t('settings.structuredOutputsTooltip')}
+            >
+              <Switch />
+            </Form.Item>
+          )}
+        </Form.Item>
+
+        <Form.Item name="baseUrl" label={t('settings.baseURL')} tooltip={t('settings.baseURLTooltip')}>
           <Input placeholder={t('settings.baseURL')} />
         </Form.Item>
 
@@ -81,4 +103,4 @@ const ProviderForm = ({
   );
 };
 
-export default ProviderForm; 
+export default ProviderForm;

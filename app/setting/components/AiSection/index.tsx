@@ -29,6 +29,8 @@ export default function AiSection() {
     if (selectedProvider) {
       form.setFieldsValue({
         name: selectedProvider.name,
+        protocol: selectedProvider.protocol ?? (selectedProvider.id === 'openai' ? 'openai' : 'openai-compatible'),
+        supportsStructuredOutputs: selectedProvider.supportsStructuredOutputs ?? true,
         baseUrl: selectedProvider.baseUrl,
         apiKey: selectedProvider.apiKey,
       });
@@ -78,7 +80,7 @@ export default function AiSection() {
     if (currentModel) {
       // Edit existing model
       updatedModels = selectedProvider.models.map(m =>
-        m.id === model.id ? model : m
+        m.id === currentModel.id ? model : m
       );
     } else {
       // Add new model

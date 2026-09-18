@@ -15,7 +15,6 @@ export default function ReadPage() {
   const [loading, setLoading] = useState(true)
   const [bookNotFound, setBookNotFound] = useState(false)
   const [isChapterLoading, setIsChapterLoading] = useState(false)
-  const [fadeVisible, setFadeVisible] = useState(true)
   const [book] = useBook()
   const { readingProgress, updateReadingProgress } = useReadingProgressStore()
 
@@ -47,19 +46,13 @@ export default function ReadPage() {
 
   const handleChapterChange = async (index: number, lineIndex = 0) => {
     if (!readingId) return
-    setFadeVisible(false)
-    setTimeout(async () => {
-      setIsChapterLoading(true)
-      const start = Date.now()
+    setIsChapterLoading(true)
+    try {
       await db.updateCurrentLocation(readingId, { chapterIndex: index, lineIndex })
       await updateReadingProgress(readingId)
-      const elapsed = Date.now() - start
-      if (elapsed < 200) {
-        await new Promise(resolve => setTimeout(resolve, 200 - elapsed))
-      }
+    } finally {
       setIsChapterLoading(false)
-      setFadeVisible(true)
-    }, 200)
+    }
   }
 
 
@@ -68,9 +61,9 @@ export default function ReadPage() {
       <ReadMenu toc={book.toc} currentChapter={readingProgress.currentLocation.chapterIndex} onChapterChange={(index: number, lineIndex = 0) => {
         handleChapterChange(index, lineIndex)
       }} />
-      <div className={`flex-1 h-full transition-opacity duration-200 ease-in-out ${fadeVisible ? 'opacity-100' : 'opacity-0'}`}>
+      <div className="flex-1 h-full">
         {isChapterLoading ? <div className="w-full h-full" /> : <ReadArea book={book} readingProgress={readingProgress} />}
       </div>
     </div>
   )
-} 
+}

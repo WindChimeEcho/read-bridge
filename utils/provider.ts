@@ -5,6 +5,8 @@ export const newProvider = (): Provider => {
   return {
     id: generateUUID(),
     name: 'new Provider',
+    protocol: 'openai-compatible',
+    supportsStructuredOutputs: true,
     baseUrl: '',
     apiKey: '',
     models: [],

@@ -10,7 +10,10 @@ export default function DefaultModelSection() {
   const [form] = Form.useForm();
 
   const configuredProviders = useMemo(() => {
-    return providers.filter(provider => provider.baseUrl && provider.apiKey && provider.models.length > 0);
+    return providers.filter(provider => {
+      const needsBaseUrl = !provider.protocol || provider.protocol === 'openai-compatible'
+      return provider.apiKey && provider.models.length > 0 && (!needsBaseUrl || provider.baseUrl)
+    });
   }, [providers]);
 
   const hasModels = configuredProviders.length > 0;
@@ -20,7 +23,7 @@ export default function DefaultModelSection() {
     return configuredProviders.map(provider => ({
       label: provider.name,
       options: provider.models.map(model => ({
-        value: model.id,
+        value: `${provider.id}:${model.id}`,
         label: `${model.name} (${model.id})`,
       }))
     }));
@@ -44,21 +47,21 @@ export default function DefaultModelSection() {
       form.resetFields();
     } else {
       form.setFieldsValue({
-        chatModel: chatModel?.id,
-        parseModel: parseModel?.id
+        chatModel: chatModel ? `${chatModel.providerId}:${chatModel.id}` : undefined,
+        parseModel: parseModel ? `${parseModel.providerId}:${parseModel.id}` : undefined
       });
     }
   }, [chatModel, parseModel, hasModels, form, setChatModel, setParseModel]);
 
-  const handleChatModelChange = useCallback((modelId: string) => {
-    const selectedModel = availableModels.find(model => model.id === modelId);
+  const handleChatModelChange = useCallback((modelKey: string) => {
+    const selectedModel = availableModels.find(model => `${model.providerId}:${model.id}` === modelKey);
     if (selectedModel) {
       setChatModel(selectedModel);
     }
   }, [availableModels, setChatModel]);
 
-  const handleParseModelChange = useCallback((modelId: string) => {
-    const selectedModel = availableModels.find(model => model.id === modelId);
+  const handleParseModelChange = useCallback((modelKey: string) => {
+    const selectedModel = availableModels.find(model => `${model.providerId}:${model.id}` === modelKey);
     if (selectedModel) {
       setParseModel(selectedModel);
     }

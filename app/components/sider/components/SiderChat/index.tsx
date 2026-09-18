@@ -5,11 +5,11 @@ import { LLMHistory } from "@/types/llm"
 
 import { useCallback, useMemo, useState, useRef, useEffect } from "react"
 import { useLLMStore } from "@/store/useLLMStore"
-import { createLLMClient } from "@/services/llm"
+import { generateAnalysis } from '@/services/ai/generate'
 import dayjs from "dayjs"
 import { getNewHistory } from "@/store/useOutputOptions"
 import { ChatTools, ChatContent, ChatInput, ChatHistory } from "./cpns"
-import { ChatCompletionMessageParam } from "openai/resources/index.mjs"
+import type { ModelMessage } from 'ai'
 import { useOutputOptions } from "@/store/useOutputOptions"
 import { useTranslation } from "@/i18n/useTranslation"
 import { useReadingProgressStore } from "@/store/useReadingProgress"
@@ -24,27 +24,34 @@ export default function StandardChat() {
   const { chatShortcut } = useSiderStore()
   const [history, setHistory] = useState<LLMHistory>(() => getNewHistory(promptOptions, selectedId))
   const { setHistory: setStoreHistory, historys } = useHistoryStore()
-  const { chatModel } = useLLMStore()
-  const chatLLMClient = useMemo(() => {
-    return chatModel
-      ? createLLMClient(chatModel)
-      : null
-  }, [chatModel])
+  const { chatModel, providers } = useLLMStore()
+  const chatProvider = useMemo(() => (
+    chatModel ? providers.find(provider => provider.id === chatModel.providerId) ?? null : null
+  ), [chatModel, providers])
 
   const [isGenerating, setIsGenerating] = useState(false)
   const abortControllerRef = useRef<AbortController | null>(null)
+  const generationIdRef = useRef(0)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [focusTrigger, setFocusTrigger] = useState(0)
 
-  const handleOpenModal = () => {
+  const handlePlus = useCallback(() => {
+    abortControllerRef.current?.abort()
+    generationIdRef.current += 1
+    setIsGenerating(false)
+    setHistory(getNewHistory(promptOptions, selectedId))
+    setStoreHistory(null)
+  }, [promptOptions, selectedId, setStoreHistory])
+
+  const handleOpenModal = useCallback(() => {
     handlePlus()
     setIsModalOpen(true)
     setFocusTrigger(prev => prev + 1)
-  }
+  }, [handlePlus])
 
-  const handleCloseModal = () => {
+  const handleCloseModal = useCallback(() => {
     setIsModalOpen(false)
-  }
+  }, [])
 
   // 快捷键监听
   useEffect(() => {
@@ -68,7 +75,7 @@ export default function StandardChat() {
     return () => {
       document.removeEventListener('keydown', handleKeyDown)
     }
-  }, [chatShortcut])
+  }, [chatShortcut, handleOpenModal])
 
   // ESC键监听 - 关闭modal
   useEffect(() => {
@@ -83,19 +90,16 @@ export default function StandardChat() {
     return () => {
       document.removeEventListener('keydown', handleEscapeKey)
     }
-  }, [isModalOpen])
-
-  function handlePlus() {
-    if (!history) return
-    setHistory(getNewHistory(promptOptions, selectedId))
-    setStoreHistory(null)
-  }
+  }, [isModalOpen, handleCloseModal])
 
   const handleSelectHistory = useCallback((id: string) => {
-    const history = historys.find(item => item.id === id)
-    if (!history) return
-    setHistory(history)
-    setStoreHistory(history)
+    const selectedHistory = historys.find(item => item.id === id)
+    if (!selectedHistory) return
+    abortControllerRef.current?.abort()
+    generationIdRef.current += 1
+    setIsGenerating(false)
+    setHistory(selectedHistory)
+    setStoreHistory(selectedHistory)
   }, [historys, setHistory, setStoreHistory])
 
   const tagOptions = useMemo(() => [
@@ -109,23 +113,7 @@ export default function StandardChat() {
     }
   ], [t])
 
-  const handleMessage = useCallback((messages: LLMHistory['messages'], chunk: string, name: string, isThinking: boolean, thinkingTime: number | null) => {
-    const endMessage = messages[messages.length - 1]
-    let updateMessage = { ...endMessage }
-    if (endMessage?.role === 'assistant') {
-      if (isThinking) updateMessage.reasoningContent += chunk
-      else updateMessage.content += chunk
-      if (thinkingTime) updateMessage.thinkingTime = thinkingTime
-      return [...messages.slice(0, -1), updateMessage]
-    } else {
-      updateMessage = { role: 'assistant' as const, content: '', reasoningContent: '', timestamp: dayjs().unix(), name }
-      if (isThinking) updateMessage.reasoningContent = chunk
-      else updateMessage.content = chunk
-      return [...messages, updateMessage]
-    }
-  }, [])
-
-  const handleTags = useCallback((tags: string[]): ChatCompletionMessageParam[] => {
+  const handleTags = useCallback((tags: string[]): ModelMessage[] => {
     const { sentenceChapters = [], currentLocation = { chapterIndex: 0, lineIndex: 0 } } = readingProgress
     const { chapterIndex = 0, lineIndex = 0 } = currentLocation
     const currentChapter = sentenceChapters[chapterIndex] || []
@@ -147,8 +135,8 @@ export default function StandardChat() {
           }
       }
     })
-    const filteredContext = tagContext.filter(Boolean) as ChatCompletionMessageParam[]
-    const finalContext: ChatCompletionMessageParam[] = []
+    const filteredContext = tagContext.filter(Boolean) as ModelMessage[]
+    const finalContext: ModelMessage[] = []
     filteredContext.forEach(ctx => {
       finalContext.push(ctx);
       finalContext.push({
@@ -161,14 +149,15 @@ export default function StandardChat() {
 
   const handleChat = useCallback(async (newHistory: LLMHistory, tags: string[]) => {
     if (!newHistory) throw new Error('newHistory is undefined')
-    if (!chatLLMClient) throw new Error('chatLLMClient is undefined')
+    if (!chatModel || !chatProvider) throw new Error('Chat model is not configured')
     if (newHistory.messages.length === 0) throw new Error('newHistory.messages is empty')
 
     setIsGenerating(true)
 
-    // 中断控制
+    abortControllerRef.current?.abort()
     abortControllerRef.current = new AbortController()
     const signal = abortControllerRef.current.signal
+    const generationId = ++generationIdRef.current
 
     // 处理tag
     const tagContext = tags.length > 0 ? handleTags(tags) : []
@@ -178,69 +167,72 @@ export default function StandardChat() {
       content: msg.content
     }))]
     const prompt = newHistory.prompt
-    let isThinking = false
-    let thinkingStartTime: number | null = null
-    let thinkingTime: number | null = null
+    const assistantMessage = {
+      role: 'assistant' as const,
+      content: '',
+      reasoningContent: '',
+      timestamp: dayjs().unix(),
+      name: chatModel.name,
+    }
+    let currentMessages = [...newHistory.messages, assistantMessage]
+    let content = ''
+    let reasoning = ''
+    let reasoningStartedAt: number | null = null
+    let generationFinished = false
+
+    const updateAssistantMessage = () => {
+      if (generationIdRef.current !== generationId) return
+      const thinkingTime = reasoningStartedAt && (content || generationFinished)
+        ? Math.max(1, dayjs().unix() - reasoningStartedAt)
+        : undefined
+      currentMessages = [
+        ...currentMessages.slice(0, -1),
+        { ...assistantMessage, content, reasoningContent: reasoning, thinkingTime },
+      ]
+      setHistory(current => ({ ...current, messages: currentMessages }))
+    }
+
     try {
-      const responseGenerator = chatLLMClient.completionsGenerator(messages, prompt, signal)
-      let currentMessages = handleMessage(newHistory.messages, '', chatLLMClient.name, false, null)
-      setHistory(prev => {
-        const newHistory = {
-          ...prev,
-          messages: currentMessages
-        }
-        return newHistory
+      setHistory(current => ({ ...current, messages: currentMessages }))
+      await generateAnalysis({
+        provider: chatProvider,
+        model: chatModel,
+        outputType: 'MD',
+        instructions: prompt,
+        messages,
+        abortSignal: signal,
+        onResult: result => {
+          if (result.type !== 'MD') return
+          content = result.content
+          updateAssistantMessage()
+        },
+        onReasoning: value => {
+          if (reasoningStartedAt === null) reasoningStartedAt = dayjs().unix()
+          reasoning = value
+          updateAssistantMessage()
+        },
       })
-
-      for await (const chunk of responseGenerator) {
-        if (chunk === '<think>') {
-          isThinking = true
-          thinkingStartTime = dayjs().unix()
-          continue
-        }
-        if (chunk === '</think>') {
-          isThinking = false
-          thinkingTime = thinkingStartTime ? (dayjs().unix() - thinkingStartTime) : null
-          continue
-        }
-        currentMessages = handleMessage(currentMessages, chunk, chatLLMClient.name, isThinking, thinkingTime);
-        thinkingTime = null
-        setHistory(prev => ({
-          ...prev,
-          messages: currentMessages
-        }));
-      }
     } catch (error) {
-      console.error('Chat generation error:', error)
-      message.error('聊天生成出错')
-    } finally {
-      const wasAborted = abortControllerRef.current?.signal.aborted || false;
-
-      if (wasAborted) {
-        message.info('已中断聊天生成')
-        setHistory(prev => {
-          const newHistory = {
-            ...prev,
-            messages: handleMessage(prev.messages, '已中断聊天生成', chatLLMClient.name, false, thinkingStartTime ? (dayjs().unix() - thinkingStartTime) : null)
-          }
-
-          return newHistory
-        });
-      } else {
-        setHistory(prev => {
-          return prev
-        });
+      if (!signal.aborted) {
+        console.error('Chat generation error:', error)
+        message.error('聊天生成出错')
       }
-      setTimeout(() => {
-        setHistory(prev => {
-          setStoreHistory(prev)
-          return prev
-        })
-      }, 0)
+    } finally {
+      if (generationIdRef.current !== generationId) return
+      generationFinished = true
+      if (signal.aborted) {
+        message.info('已中断聊天生成')
+      }
+      updateAssistantMessage()
+      setHistory(current => {
+        const completedHistory = { ...current, messages: currentMessages }
+        setStoreHistory(completedHistory)
+        return completedHistory
+      })
       setIsGenerating(false)
       abortControllerRef.current = null
     }
-  }, [chatLLMClient, setHistory, setStoreHistory, handleMessage, handleTags])
+  }, [chatModel, chatProvider, setStoreHistory, handleTags])
 
   const handleStopGeneration = useCallback(() => {
     if (abortControllerRef.current) {
@@ -250,7 +242,7 @@ export default function StandardChat() {
 
   const handleSend = useCallback(async (input: string, tags: string[]) => {
     if (input.length === 0) return
-    if (!chatLLMClient) {
+    if (!chatModel || !chatProvider) {
       message.warning('请在设置中选择聊天模型')
       return
     }
@@ -267,7 +259,7 @@ export default function StandardChat() {
       })
     })
     handleChat(newHistory, tags)
-  }, [chatLLMClient, setHistory, handleChat])
+  }, [chatModel, chatProvider, handleChat])
 
   // history
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false)

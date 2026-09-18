@@ -1,5 +1,13 @@
-import { OpenAI } from 'openai'
 import { OutputType } from '@/types/prompt'
+
+export const PROVIDER_PROTOCOLS = [
+  'openai',
+  'anthropic',
+  'google',
+  'openai-compatible',
+] as const
+
+export type ProviderProtocol = typeof PROVIDER_PROTOCOLS[number]
 
 export type Model = {
   id: string
@@ -14,30 +22,10 @@ export type Provider = {
   name: string
   baseUrl: string
   apiKey: string
+  protocol?: ProviderProtocol
+  supportsStructuredOutputs?: boolean
   isDefault?: boolean
   models: Model[]
-}
-
-export type Client = {
-  name: string,
-  id: string,
-  Provider: Provider,
-  completionsGenerator: (
-    messages: OpenAI.Chat.ChatCompletionMessageParam[],
-    prompt?: string,
-    signal?: AbortSignal
-  ) => AsyncGenerator<string, void, unknown>
-  completions: (
-    messages: OpenAI.Chat.ChatCompletionMessageParam[],
-    prompt?: string,
-    signal?: AbortSignal
-  ) => Promise<string>
-  check: () => Promise<{ valid: boolean, error: Error | null }>
-}
-
-export type ClientOptions = {
-  max_tokens?: number
-  [key: string]: number | string | undefined
 }
 
 

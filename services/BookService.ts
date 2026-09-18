@@ -18,7 +18,6 @@ import { generateUUID } from '@/utils/uuid'
  */
 export async function processBook(buffer: Buffer, type: BOOK_MIME_TYPE_TYPE, name: string, hash: string): Promise<Book> {
   let initFile: FormattedBook | null = null
-  console.log(type, 'type')
   try {
     switch (type) {
       case BOOK_MIME_TYPE.EPUB:

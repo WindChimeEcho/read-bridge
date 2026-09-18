@@ -32,15 +32,20 @@ export const useLLMStore = create<LLMStore>()(
       level: 3,
       setLevel: (level: number) => set({ level }),
       providers: defaultProviders(),
-      editProvider: (provider: Provider) => set({ providers: get().providers.map(p => p.id === provider.id ? provider : p) }),
+      editProvider: (provider: Provider) => set(state => ({
+        providers: state.providers.map(item => item.id === provider.id ? provider : item),
+        chatModel: refreshSelectedModel(state.chatModel, provider),
+        parseModel: refreshSelectedModel(state.parseModel, provider),
+      })),
       addProvider: () => set({ providers: [...get().providers, newProvider()] }),
-      deleteProvider: (providerId: string) => set({ providers: get().providers.filter(p => p.id !== providerId) }),
-      models: () => get().providers.filter(p => {
-        if (!!p.baseUrl && !!p.apiKey && p.models.length > 0) {
-          return true
-        }
-        return false
-      }).map(p => p.models).flat(),
+      deleteProvider: (providerId: string) => set(state => ({
+        providers: state.providers.filter(provider => provider.id !== providerId),
+        chatModel: state.chatModel?.providerId === providerId ? null : state.chatModel,
+        parseModel: state.parseModel?.providerId === providerId ? null : state.parseModel,
+      })),
+      models: () => get().providers
+        .filter(isProviderConfigured)
+        .flatMap(provider => provider.models),
       chatModel: null,
       setChatModel: (model: Model | null) => set({ chatModel: model }),
       parseModel: null,
@@ -50,4 +55,14 @@ export const useLLMStore = create<LLMStore>()(
       name: 'llm-storage',
     }
   )
-) 
+)
+
+function refreshSelectedModel(selected: Model | null, provider: Provider): Model | null {
+  if (!selected || selected.providerId !== provider.id) return selected
+  return provider.models.find(model => model.id === selected.id) ?? null
+}
+
+function isProviderConfigured(provider: Provider): boolean {
+  const needsBaseUrl = !provider.protocol || provider.protocol === 'openai-compatible'
+  return Boolean(provider.apiKey && provider.models.length > 0 && (!needsBaseUrl || provider.baseUrl))
+}

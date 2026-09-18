@@ -1,4 +1,4 @@
-import { ChatCompletionMessageParam } from "openai/resources/index.mjs"
+import type { ModelMessage } from 'ai'
 
 const WORD_DETAILS = `
 function WordHelper(word: string, sentence: string) {
@@ -131,38 +131,20 @@ export const INPUT_PROMPT = {
 
 const TEXT = `
 INPUT: {SENTENCE}
-OUTPUT: 
-HTML Text with Content
-<p>...</p>
-don't use other html tags
+OUTPUT: plain text
+Return the answer directly without HTML, Markdown fences, or wrapper labels.
 `
 
 const SIMPLE_LIST = `
 INPUT: {SENTENCE}
-OUTPUT: 
-HTML Unordered List with Content Items
-<ul>
-  <li>...</li>
-  <li>...</li>
-  <li>...</li>
-  ...
-  <!-- Content determined by instructions and LLM processing -->
-</ul>
-don't use other html tags
+OUTPUT: a structured list
+Put each complete item in the structured output requested by the application.
 `
 
 const KEY_VALUE_LIST = `
 INPUT: {SENTENCE}
-OUTPUT: 
-HTML Unordered List with Content Items
-<ul>
-  <li>item: content</li>
-  <li>item: content</li>
-  <li>item: content</li>
-  ...
-  <!-- Content determined by instructions and LLM processing -->
-</ul>
-don't use other html tags
+OUTPUT: a structured key-value list
+For each item, keep its short label separate from its explanation in the structured output requested by the application.
 `
 
 const MD = `
@@ -194,10 +176,10 @@ export function assemblePrompt(rulePrompt: string, outputPrompt: string): string
   return `${rulePrompt}\n\n${outputPrompt}`
 }
 
-export function contextMessages(input: string, before?: string, after?: string,): ChatCompletionMessageParam[] {
+export function contextMessages(input: string, before?: string, after?: string): ModelMessage[] {
   return [
     before ? { role: "user", content: `<<CONTEXT_BEFORE>>\n${before}` } : undefined,
     after ? { role: "user", content: `<<CONTEXT_AFTER>>\n${after}` } : undefined,
     { role: "user", content: `<<INPUT>>\n${input}` },
-  ].filter(Boolean) as ChatCompletionMessageParam[]
+  ].filter(Boolean) as ModelMessage[]
 }

@@ -35,8 +35,8 @@ const ModelFormModal = ({
         id: values.id,
         name: values.name || values.id,
         providerId: providerId,
-        temperature: values.temperature || 0.5,
-        topP: values.topP || 1
+        temperature: values.temperature ?? 0.5,
+        topP: values.topP ?? 1
       };
       onSubmit(modelData);
       form.resetFields();
@@ -78,4 +78,4 @@ const ModelFormModal = ({
   );
 };
 
-export default ModelFormModal; 
+export default ModelFormModal;

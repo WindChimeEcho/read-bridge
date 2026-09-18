@@ -6,7 +6,6 @@ import remarkGfm from 'remark-gfm'
 import remarkMath from 'remark-math'
 import remarkBreaks from 'remark-breaks'
 import rehypeKatex from 'rehype-katex'
-import rehypeRaw from 'rehype-raw'
 import type { ChatMarkdownProps } from './types'
 import './index.css'
 import 'katex/dist/katex.min.css'
@@ -20,7 +19,6 @@ export default function ChatMarkdown({ content, theme, className = '' }: ChatMar
   ], [])
 
   const rehypePlugins = useMemo(() => [
-    rehypeRaw,      // HTML tags support
     rehypeKatex     // KaTeX math formula rendering
   ], [])
 

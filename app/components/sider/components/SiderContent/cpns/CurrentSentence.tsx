@@ -32,16 +32,12 @@ export default function CurrentSentence({ sentence, handleWord, onEditComplete, 
   const currentBookmarks = currentBookmarkInfo ?
     getBookmarksByBookId(currentBookmarkInfo.bookId) : [];
 
-  // 计算当前是否已收藏 - 监听书签数组长度变化
-  const isBookmarked = useMemo(() => {
-    if (!currentBookmarkInfo) return false;
-
-    const { chapterIndex, lineIndex } = currentBookmarkInfo;
-    return currentBookmarks.some(bookmark =>
-      bookmark.chapterIndex === chapterIndex &&
-      bookmark.lineIndex === lineIndex
-    );
-  }, [currentBookmarkInfo, currentBookmarks.length]);
+  const isBookmarked = currentBookmarkInfo
+    ? currentBookmarks.some(bookmark =>
+      bookmark.chapterIndex === currentBookmarkInfo.chapterIndex &&
+      bookmark.lineIndex === currentBookmarkInfo.lineIndex
+    )
+    : false
 
   const wordTypeColors = useMemo(() => ({
     'Verb': 'text-[var(--ant-green-6)]',

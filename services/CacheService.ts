@@ -11,7 +11,7 @@ export function CacheService() {
   async function get(params: CacheKeyParams): Promise<CacheItem | null> {
     const store = useCacheStore.getState()
 
-    const cacheKey = generateCacheKey(params)
+    const cacheKey = await generateCacheKey(params)
 
     const timeSlot = store.getSlotForKey(cacheKey)
     // 无时间槽
@@ -29,17 +29,15 @@ export function CacheService() {
       return null
     }
 
+    if (item.schemaVersion !== 2) return null
     return item
   }
 
-  /**
-   * 设置缓存项
-   *  result?: string resultArray?: string[], 二选一 
-   */
+  /** 保存完成并通过校验的 v2 结果。 */
   async function set(params: CacheKeyParams, values: CacheItemValue): Promise<void> {
     const store = useCacheStore.getState()
 
-    const cacheKey = generateCacheKey(params)
+    const cacheKey = await generateCacheKey(params)
     const timeSlot = getTimeSlot()
 
     // 清除老数据
@@ -62,7 +60,7 @@ export function CacheService() {
   async function remove(params: CacheKeyParams): Promise<void> {
     const store = useCacheStore.getState()
 
-    const cacheKey = generateCacheKey(params)
+    const cacheKey = await generateCacheKey(params)
     const timeSlot = store.getSlotForKey(cacheKey)
     // 有对应时间槽
     if (timeSlot) {

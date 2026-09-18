@@ -61,6 +61,7 @@ export interface ReadingProgress {
   sentenceChapters: {
     [chapterIndex: number]: string[];
   }
+  sentenceFormatVersion?: number;
 }
 
 export type Bookmark = {

@@ -5,6 +5,7 @@ export const defaultProviders = (): Provider[] => {
     {
       id: 'openai',
       name: 'OpenAI',
+      protocol: 'openai',
       baseUrl: 'https://api.openai.com/v1',
       apiKey: '',
       isDefault: true,
@@ -42,6 +43,8 @@ export const defaultProviders = (): Provider[] => {
     {
       id: 'deepseek',
       name: 'DeepSeek',
+      protocol: 'openai-compatible',
+      supportsStructuredOutputs: true,
       baseUrl: 'https://api.deepseek.com',
       apiKey: '',
       isDefault: true,
@@ -65,6 +68,8 @@ export const defaultProviders = (): Provider[] => {
     {
       id: 'volcengine',
       name: '火山引擎',
+      protocol: 'openai-compatible',
+      supportsStructuredOutputs: true,
       baseUrl: 'https://ark.cn-beijing.volces.com/api/v3',
       apiKey: '',
       isDefault: true,

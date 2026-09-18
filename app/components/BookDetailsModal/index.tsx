@@ -54,7 +54,7 @@ const BookDetailsModal: FC<BookDetailsModalProps> = ({
 
   // Helper function to handle base64 image data
   const handleBase64 = useCallback((cover: Resource) => {
-    return `data:image/jpeg;base64,${cover.data}`;
+    return `data:${cover.mediaType};base64,${cover.data}`;
   }, []);
 
   const handleDelete = async () => {
@@ -65,6 +65,8 @@ const BookDetailsModal: FC<BookDetailsModalProps> = ({
       await db.deleteBook(bookId);
 
       message.success(t('common.templates.deleteSuccess', { entity: t('common.entities.bookGeneric') }));
+      if (bookId === readingId) setReadingId(null)
+      await updateBook()
       onClose();
       // Force a refresh of the home page
       router.refresh();
@@ -72,12 +74,6 @@ const BookDetailsModal: FC<BookDetailsModalProps> = ({
       console.error('Error deleting book:', error);
       message.error(t('common.templates.deleteFailed', { entity: t('common.entities.bookGeneric') }));
     } finally {
-      if (bookId === readingId) {
-        setReadingId(null)
-      }
-      await db.deleteReadingProgress(bookId)
-      await updateReadingProgress(bookId)
-      await updateBook()
       setLoading(false);
     }
   };
@@ -95,7 +91,7 @@ const BookDetailsModal: FC<BookDetailsModalProps> = ({
     return {
       ...book,
     };
-  }, [book]);
+  }, [book, t]);
 
   const handleEditSubmit = useCallback(async (updatedBook: Book) => {
     const currentBook = getBookForEdit();
@@ -120,12 +116,11 @@ const BookDetailsModal: FC<BookDetailsModalProps> = ({
       message.error(t('common.templates.updateFailed', { entity: t('common.entities.bookGeneric') }));
     } finally {
       setLoading(false);
-      await db.resetReadingProgress(bookId)
-      await updateReadingProgress(bookId)
+      if (readingId === bookId) await updateReadingProgress(bookId)
       await updateBook()
       onClose();
     }
-  }, [bookId, router, t, getBookForEdit]);
+  }, [bookId, router, t, getBookForEdit, onClose, readingId, updateBook, updateReadingProgress]);
 
   const renderDetailedView = () => (
     <div className="space-y-4">
@@ -225,4 +220,4 @@ const BookDetailsModal: FC<BookDetailsModalProps> = ({
   );
 };
 
-export default BookDetailsModal; 
+export default BookDetailsModal;

@@ -1,6 +1,6 @@
 [package]
 name = "read-bridge"
-version = "0.1.1"
+version = "0.1.12"
 default-run = "read-bridge"
 description = "A Tauri App"
 authors = ["you"]

@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { Form, Input, Modal, Slider } from 'antd';
+import { Form, Input, Modal, AutoComplete } from 'antd';
 import { Model } from '@/types/llm';
 import { useTranslation } from '@/i18n/useTranslation';
 
@@ -8,7 +8,8 @@ interface ModelFormModalProps {
   onCancel: () => void;
   onSubmit: (model: Model) => void;
   initialValues?: Model;
-  providerId: string
+  providerId: string;
+  remoteModels?: { id: string; name: string }[];
 }
 
 const ModelFormModal = ({
@@ -16,7 +17,8 @@ const ModelFormModal = ({
   onCancel,
   onSubmit,
   initialValues,
-  providerId
+  providerId,
+  remoteModels
 }: ModelFormModalProps) => {
   const { t } = useTranslation()
   const [form] = Form.useForm();
@@ -35,18 +37,21 @@ const ModelFormModal = ({
         id: values.id,
         name: values.name || values.id,
         providerId: providerId,
-        temperature: values.temperature ?? 0.5,
-        topP: values.topP ?? 1
       };
       onSubmit(modelData);
       form.resetFields();
     });
   };
 
-  const handleIdChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const idValue = e.target.value;
-    form.setFieldsValue({ name: idValue });
+  const handleIdChange = (val: string) => {
+    const matched = remoteModels?.find(m => m.id === val);
+    form.setFieldsValue({ name: matched?.name || val });
   };
+
+  const autoCompleteOptions = remoteModels?.map(m => ({
+    value: m.id,
+    label: m.name && m.name !== m.id ? `${m.id} (${m.name})` : m.id,
+  })) || [];
 
   return (
     <Modal
@@ -57,21 +62,17 @@ const ModelFormModal = ({
       okText={t('common.ok')}
       cancelText={t('common.cancel')}
     >
-      <Form form={form} layout="vertical" initialValues={initialValues || { temperature: 0.5, topP: 1 }}>
+      <Form form={form} layout="vertical" initialValues={initialValues}>
         <Form.Item name="id" label={t('settings.modelID')} required tooltip={t('settings.modelIDTooltip')} rules={[{ required: true, message: t('common.templates.pleaseEnter', { field: t('common.entities.modelID') }) }]}>
-          <Input
+          <AutoComplete
+            options={autoCompleteOptions}
             placeholder={t('settings.modelIDPlaceholder')}
             onChange={handleIdChange}
+            filterOption={(inputValue, option) => (option?.value?.toString().toLowerCase().includes(inputValue.toLowerCase()) || option?.label?.toString().toLowerCase().includes(inputValue.toLowerCase())) ?? false}
           />
         </Form.Item>
         <Form.Item name="name" label={t('settings.modelName')} tooltip={t('settings.modelNameTooltip')}>
           <Input placeholder={t('settings.modelNamePlaceholder')} />
-        </Form.Item>
-        <Form.Item name="temperature" label={t('settings.temperature')} tooltip={t('settings.temperatureTooltip')}>
-          <Slider min={0} max={2} step={0.1} />
-        </Form.Item>
-        <Form.Item name="topP" label={t('settings.topP')} tooltip={t('settings.topPTooltip')}>
-          <Slider min={0} max={1} step={0.1} />
         </Form.Item>
       </Form>
     </Modal>

@@ -1,8 +1,9 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import { Model, Provider } from '@/types/llm'
+import { Model, Provider, ThinkingConfig } from '@/types/llm'
 import { newProvider } from '@/utils/provider'
-import { defaultProviders } from '@/config/llm'
+import { defaultProviders, DEFAULT_THINKING_CONFIG } from '@/config/llm'
+import { upgradeLLMState } from '@/utils/llm'
 interface LLMStore {
   level: number
   setLevel: (level: number) => void
@@ -24,6 +25,12 @@ interface LLMStore {
   parseModel: Model | null
   // 设置解析模型
   setParseModel: (model: Model | null) => void
+  // 聊天思考配置
+  chatThinking: ThinkingConfig
+  setChatThinking: (thinking: ThinkingConfig) => void
+  // 解析思考配置
+  parseThinking: ThinkingConfig
+  setParseThinking: (thinking: ThinkingConfig) => void
 }
 
 export const useLLMStore = create<LLMStore>()(
@@ -50,9 +57,15 @@ export const useLLMStore = create<LLMStore>()(
       setChatModel: (model: Model | null) => set({ chatModel: model }),
       parseModel: null,
       setParseModel: (model: Model | null) => set({ parseModel: model }),
+      chatThinking: { ...DEFAULT_THINKING_CONFIG },
+      setChatThinking: (chatThinking: ThinkingConfig) => set({ chatThinking }),
+      parseThinking: { ...DEFAULT_THINKING_CONFIG },
+      setParseThinking: (parseThinking: ThinkingConfig) => set({ parseThinking }),
     }),
     {
       name: 'llm-storage',
+      version: 2,
+      migrate: (persistedState, version) => upgradeLLMState(persistedState, version),
     }
   )
 )

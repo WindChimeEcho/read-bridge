@@ -37,12 +37,7 @@ const ModelCard = ({ model, onEdit, onDelete }: ModelCardProps) => {
           </Popconfirm>
         </Space>
       </div>
-      <div className="mt-2">
-        <div className="flex justify-between">
-          <span>{t('settings.temperature')}: {model.temperature}</span>
-          <span>{t('settings.topP')}: {model.topP}</span>
-        </div>
-      </div>
+
     </Card>
   );
 };

@@ -137,14 +137,16 @@ Return the answer directly without HTML, Markdown fences, or wrapper labels.
 
 const SIMPLE_LIST = `
 INPUT: {SENTENCE}
-OUTPUT: a structured list
-Put each complete item in the structured output requested by the application.
+OUTPUT: json
+Return a valid JSON object with an "items" array of strings, without Markdown code fences.
+Example: {"items": ["first item", "second item"]}
 `
 
 const KEY_VALUE_LIST = `
 INPUT: {SENTENCE}
-OUTPUT: a structured key-value list
-For each item, keep its short label separate from its explanation in the structured output requested by the application.
+OUTPUT: json
+Return a valid JSON object with an "items" array of objects, each containing "label" and "description" string fields, without Markdown code fences.
+Example: {"items": [{"label": "key term", "description": "clear explanation"}]}
 `
 
 const MD = `

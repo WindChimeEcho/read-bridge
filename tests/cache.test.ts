@@ -10,8 +10,8 @@ const baseParams: CacheKeyParams = {
   outputType: 'TEXT',
   providerId: 'openai',
   modelId: 'model-a',
-  temperature: 0.5,
-  topP: 1,
+  thinkingMode: 'default',
+  reasoningEffort: 'medium',
 }
 
 describe('AI result cache keys', () => {
@@ -24,7 +24,8 @@ describe('AI result cache keys', () => {
     ['output type', { outputType: 'MD' as const }],
     ['provider', { providerId: 'provider-b' }],
     ['model', { modelId: 'model-b' }],
-    ['temperature', { temperature: 0.7 }],
+    ['thinking mode', { thinkingMode: 'enabled' as const }],
+    ['reasoning effort', { reasoningEffort: 'high' as const }],
   ])('changes when the %s changes', async (_, change) => {
     expect(await generateCacheKey({ ...baseParams, ...change })).not.toBe(await generateCacheKey(baseParams))
   })

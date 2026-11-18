@@ -13,8 +13,13 @@ export type Model = {
   id: string
   name: string
   providerId: string
-  temperature: number
-  topP: number
+}
+
+export type ThinkingMode = 'default' | 'enabled' | 'disabled'
+export type ReasoningEffort = 'low' | 'medium' | 'high'
+export type ThinkingConfig = {
+  mode: ThinkingMode
+  effort: ReasoningEffort
 }
 
 export type Provider = {
@@ -63,5 +68,3 @@ export type LLMHistory = {
     thinkingTime?: number // 思考时间
   }[]
 }
-
-

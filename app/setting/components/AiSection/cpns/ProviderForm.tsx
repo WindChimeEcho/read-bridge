@@ -1,5 +1,5 @@
 import { Form, Input, Button, Typography, Space, Popconfirm, FormInstance, Select, Switch } from 'antd';
-import { PlusOutlined, DeleteOutlined } from '@ant-design/icons';
+import { PlusOutlined, DeleteOutlined, SyncOutlined } from '@ant-design/icons';
 import { Provider, Model } from '@/types/llm';
 import ModelCard from './ModelCard';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -11,6 +11,8 @@ interface ProviderFormProps {
   onEditModel: (model: Model) => void;
   onDeleteModel: (modelId: string) => void;
   onDeleteProvider: () => void;
+  onFetchModels: (isAuto: boolean) => void;
+  fetchingModels: boolean;
 }
 
 const ProviderForm = ({
@@ -20,7 +22,9 @@ const ProviderForm = ({
   onAddModel,
   onEditModel,
   onDeleteModel,
-  onDeleteProvider
+  onDeleteProvider,
+  onFetchModels,
+  fetchingModels
 }: ProviderFormProps) => {
   const { t } = useTranslation()
   return (
@@ -76,15 +80,27 @@ const ProviderForm = ({
         </Form.Item>
 
         <Form.Item name="apiKey" label={t('settings.apiKey')} rules={[{ required: true }]}>
-          <Input.Password placeholder={t('settings.apiKey')} />
+          <Input.Password
+            placeholder={t('settings.apiKey')}
+            onBlur={() => onFetchModels(true)}
+          />
         </Form.Item>
 
         <div className="mb-4">
           <div className="flex justify-between items-center mb-2">
             <Typography.Title level={5}>{t('settings.model')}</Typography.Title>
-            <Button type="primary" icon={<PlusOutlined />} onClick={onAddModel}>
-              {t('settings.addModel')}
-            </Button>
+            <Space>
+              <Button
+                icon={<SyncOutlined spin={fetchingModels} />}
+                onClick={() => onFetchModels(false)}
+                loading={fetchingModels}
+              >
+                {t('settings.fetchModels')}
+              </Button>
+              <Button type="primary" icon={<PlusOutlined />} onClick={onAddModel}>
+                {t('settings.addModel')}
+              </Button>
+            </Space>
           </div>
 
           <Space direction="vertical" style={{ width: '100%' }}>

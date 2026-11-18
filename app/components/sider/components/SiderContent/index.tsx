@@ -13,7 +13,7 @@ import { assemblePrompt, contextMessages, INPUT_PROMPT, OUTPUT_PROMPT } from '@/
 import { useTranslation } from '@/i18n/useTranslation'
 import type { AnalysisResult, SentenceAnalysis } from '@/types/ai'
 import type { ReadingProgress } from '@/types/book'
-import type { Model, OutputOption, Provider } from '@/types/llm'
+import type { Model, OutputOption, Provider, ThinkingConfig } from '@/types/llm'
 
 type BookmarkInfo = {
   bookId: string
@@ -25,7 +25,7 @@ type BookmarkInfo = {
 export default function SiderContent() {
   const { t } = useTranslation()
   const { sentenceOptions, batchProcessingSize, wordOptions, selectedWordId } = useOutputOptions()
-  const { parseModel, providers } = useLLMStore()
+  const { parseModel, parseThinking, providers } = useLLMStore()
   const { ttsProvider, ttsGlobalConfig, ttsConfig } = useTTSStore()
   const { addBookmark, removeBookmark, getBookmarksByBookId } = useBookmarkStore()
 
@@ -104,7 +104,7 @@ export default function SiderContent() {
     })))
 
     const tasks = sentenceOptions.map(async option => {
-      const cacheParams = createCacheParams(bookId, text, option, parseProvider, parseModel)
+      const cacheParams = createCacheParams(bookId, text, option, parseProvider, parseModel, parseThinking)
 
       try {
         const cached = await cacheService.get(cacheParams)
@@ -124,6 +124,7 @@ export default function SiderContent() {
           outputType: option.type,
           instructions: assemblePrompt(option.rulePrompt, OUTPUT_PROMPT[option.type]),
           messages: contextMessages(text),
+          thinking: parseThinking,
           abortSignal: controller.signal,
           onResult: result => updateAnalysis(requestId, option.id, { result }),
           onReasoning: reasoning => updateAnalysis(requestId, option.id, { reasoning }),
@@ -155,7 +156,7 @@ export default function SiderContent() {
     })
 
     void Promise.allSettled(tasks).then(() => cacheService.clearCacheOnTriggerEvents())
-  }, [parseModel, parseProvider, sentenceOptions, speak, ttsGlobalConfig.autoSentenceTTS, updateAnalysis])
+  }, [parseModel, parseProvider, parseThinking, sentenceOptions, speak, ttsGlobalConfig.autoSentenceTTS, updateAnalysis])
 
   const handleLineIndex = useCallback((progress: ReadingProgress) => {
     const { chapterIndex, lineIndex } = progress.currentLocation
@@ -219,6 +220,7 @@ export default function SiderContent() {
         outputType: 'MD',
         instructions: assemblePrompt(wordOption.rulePrompt, OUTPUT_PROMPT.MD_WORD),
         messages: [{ role: 'user', content: `word: ${selectedWord}\nsentence: ${sentence}` }],
+        thinking: parseThinking,
         abortSignal: controller.signal,
         onResult: result => {
           if (wordRequestId.current === requestId && result.type === 'MD') {
@@ -232,7 +234,7 @@ export default function SiderContent() {
     } catch (error) {
       if (!controller.signal.aborted) console.error('Word analysis failed:', error)
     }
-  }, [parseModel, parseProvider, sentence, speak, ttsGlobalConfig.autoWordTTS, wordOption.rulePrompt])
+  }, [parseModel, parseProvider, parseThinking, sentence, speak, ttsGlobalConfig.autoWordTTS, wordOption.rulePrompt])
 
   const handleEditComplete = useCallback((text: string) => {
     currentSentence.current = ''
@@ -292,7 +294,8 @@ function createCacheParams(
   sentence: string,
   option: OutputOption,
   provider: Provider,
-  model: Model
+  model: Model,
+  thinking: ThinkingConfig
 ) {
   return {
     bookId,
@@ -302,8 +305,8 @@ function createCacheParams(
     outputType: option.type,
     providerId: provider.id,
     modelId: model.id,
-    temperature: model.temperature,
-    topP: model.topP,
+    thinkingMode: thinking.mode,
+    reasoningEffort: thinking.effort,
   }
 }
 

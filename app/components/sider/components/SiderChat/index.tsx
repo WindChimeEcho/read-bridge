@@ -24,7 +24,7 @@ export default function StandardChat() {
   const { chatShortcut } = useSiderStore()
   const [history, setHistory] = useState<LLMHistory>(() => getNewHistory(promptOptions, selectedId))
   const { setHistory: setStoreHistory, historys } = useHistoryStore()
-  const { chatModel, providers } = useLLMStore()
+  const { chatModel, chatThinking, providers } = useLLMStore()
   const chatProvider = useMemo(() => (
     chatModel ? providers.find(provider => provider.id === chatModel.providerId) ?? null : null
   ), [chatModel, providers])
@@ -200,6 +200,7 @@ export default function StandardChat() {
         outputType: 'MD',
         instructions: prompt,
         messages,
+        thinking: chatThinking,
         abortSignal: signal,
         onResult: result => {
           if (result.type !== 'MD') return
@@ -232,7 +233,7 @@ export default function StandardChat() {
       setIsGenerating(false)
       abortControllerRef.current = null
     }
-  }, [chatModel, chatProvider, setStoreHistory, handleTags])
+  }, [chatModel, chatProvider, chatThinking, setStoreHistory, handleTags])
 
   const handleStopGeneration = useCallback(() => {
     if (abortControllerRef.current) {

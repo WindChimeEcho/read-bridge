@@ -6,8 +6,6 @@ const model: Model = {
   id: 'test-model',
   name: 'Test model',
   providerId: 'provider',
-  temperature: 0.5,
-  topP: 1,
 }
 
 describe('AI provider factory', () => {

@@ -185,3 +185,36 @@
 .markdown em {
   font-style: italic;
 }
+
+/* Folding components (<details>, <fold>, <explain>) */
+.markdown details,
+.markdown .md-fold {
+  border: 1px solid var(--code-border);
+  border-radius: 6px;
+  background: var(--code-bg);
+  margin: 8px 0;
+  overflow: hidden;
+}
+
+.markdown details > summary,
+.markdown .md-fold-summary {
+  cursor: pointer;
+  user-select: none;
+  font-weight: 500;
+  padding: 6px 12px;
+  outline: none;
+}
+
+.markdown details[open] > summary,
+.markdown .md-fold[open] > .md-fold-summary {
+  border-bottom: 1px solid var(--code-border);
+}
+
+.markdown .md-fold-content {
+  padding: 8px 12px;
+}
+
+.markdown details > *:not(summary):last-child,
+.markdown .md-fold-content > *:last-child {
+  margin-bottom: 0;
+}

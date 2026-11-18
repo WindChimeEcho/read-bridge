@@ -1,5 +1,6 @@
 import type { AnalysisResult } from './ai'
 import type { OutputType } from './prompt'
+import type { ReasoningEffort, ThinkingMode } from './llm'
 
 export type CacheItemValue = {
   schemaVersion: 2
@@ -32,6 +33,6 @@ export interface CacheKeyParams {
   outputType: OutputType
   providerId: string
   modelId: string
-  temperature: number
-  topP: number
+  thinkingMode: ThinkingMode
+  reasoningEffort: ReasoningEffort
 }

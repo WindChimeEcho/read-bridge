@@ -1,9 +1,11 @@
-import { Output, streamText, type ModelMessage } from 'ai'
+import { streamText, type ModelMessage } from 'ai'
 import type { AnalysisResult } from '@/types/ai'
-import type { Model, Provider } from '@/types/llm'
+import type { Model, Provider, ThinkingConfig } from '@/types/llm'
+import { toSDKReasoning } from '@/utils/llm'
 import type { OutputType } from '@/types/prompt'
-import { keyValueListOutputSchema, simpleListOutputSchema } from './output-contracts'
 import { createLanguageModel } from './provider'
+import { createThinkStreamParser } from './think-parser'
+import { parseKeyValueList, parseSimpleList } from './list-parser'
 
 type PartialResultHandler = (result: AnalysisResult) => void
 
@@ -13,6 +15,7 @@ export type GenerationRequest = {
   outputType: OutputType
   instructions: string
   messages: ModelMessage[]
+  thinking?: ThinkingConfig
   abortSignal?: AbortSignal
   onReasoning?: (reasoning: string) => void
   onResult?: PartialResultHandler
@@ -24,90 +27,83 @@ export type GenerationResponse = {
 }
 
 export async function generateAnalysis(request: GenerationRequest): Promise<GenerationResponse> {
-  switch (request.outputType) {
-    case 'SIMPLE_LIST':
-      return generateSimpleList(request)
-    case 'KEY_VALUE_LIST':
-      return generateKeyValueList(request)
-    default:
-      return generateTextResult(request)
-  }
-}
-
-async function generateTextResult(request: GenerationRequest): Promise<GenerationResponse> {
-  if (request.outputType !== 'TEXT' && request.outputType !== 'MD') {
-    throw new Error(`Text generation does not support output type: ${request.outputType}`)
-  }
-
   const outputType = request.outputType
-  let content = ''
-  let reasoning = ''
+  const thinkParser = createThinkStreamParser()
 
   const result = streamText({
-    ...await createRequestOptions(request),
+    ...(await createRequestOptions(request)),
   })
 
   for await (const part of result.fullStream) {
-    if (part.type === 'text-delta') {
-      content += part.text
-      request.onResult?.({ type: outputType, content })
-    } else if (part.type === 'reasoning-delta') {
-      reasoning += part.text
-      request.onReasoning?.(reasoning)
+    if (part.type === 'reasoning-delta') {
+      const snapshot = thinkParser.addReasoningDelta(part.text)
+      if (snapshot.reasoningChanged) {
+        request.onReasoning?.(snapshot.reasoning)
+      }
+    } else if (part.type === 'text-delta') {
+      const snapshot = thinkParser.addTextDelta(part.text)
+      if (snapshot.reasoningChanged) {
+        request.onReasoning?.(snapshot.reasoning)
+      }
+      if (snapshot.contentChanged) {
+        emitResult(outputType, snapshot.content, false, request.onResult)
+      }
+    } else if (part.type === 'error') {
+      throw part.error instanceof Error ? part.error : new Error(String(part.error))
     }
   }
 
+  const finalSnapshot = thinkParser.finish()
+  if (finalSnapshot.reasoningChanged) {
+    request.onReasoning?.(finalSnapshot.reasoning)
+  }
+  if (finalSnapshot.contentChanged) {
+    emitResult(outputType, finalSnapshot.content, true, request.onResult)
+  }
+
+  const finalResult = buildAnalysisResult(outputType, finalSnapshot.content, true)
+
   return {
-    result: { type: outputType, content },
-    reasoning,
+    result: finalResult,
+    reasoning: finalSnapshot.reasoning,
   }
 }
 
-async function generateSimpleList(request: GenerationRequest): Promise<GenerationResponse> {
-  let reasoning = ''
-  const result = streamText({
-    ...await createRequestOptions(request),
-    output: Output.object({ schema: simpleListOutputSchema }),
-    onChunk: ({ chunk }) => {
-      if (chunk.type === 'reasoning-delta') {
-        reasoning += chunk.text
-        request.onReasoning?.(reasoning)
+function buildAnalysisResult(
+  outputType: OutputType,
+  content: string,
+  isComplete: boolean
+): AnalysisResult {
+  switch (outputType) {
+    case 'SIMPLE_LIST':
+      return {
+        type: 'SIMPLE_LIST',
+        items: parseSimpleList(content, isComplete),
       }
-    },
-  })
-
-  for await (const partial of result.partialOutputStream) {
-    const items = partial.items?.filter((item): item is string => typeof item === 'string') ?? []
-    request.onResult?.({ type: 'SIMPLE_LIST', items })
+    case 'KEY_VALUE_LIST':
+      return {
+        type: 'KEY_VALUE_LIST',
+        items: parseKeyValueList(content, isComplete),
+      }
+    case 'TEXT':
+    case 'MD':
+      return {
+        type: outputType,
+        content,
+      }
+    default:
+      throw new Error(`Unsupported output type: ${outputType as string}`)
   }
-
-  const output = await result.output
-  return { result: { type: 'SIMPLE_LIST', items: output.items }, reasoning }
 }
 
-async function generateKeyValueList(request: GenerationRequest): Promise<GenerationResponse> {
-  let reasoning = ''
-  const result = streamText({
-    ...await createRequestOptions(request),
-    output: Output.object({ schema: keyValueListOutputSchema }),
-    onChunk: ({ chunk }) => {
-      if (chunk.type === 'reasoning-delta') {
-        reasoning += chunk.text
-        request.onReasoning?.(reasoning)
-      }
-    },
-  })
-
-  for await (const partial of result.partialOutputStream) {
-    const items = (partial.items ?? []).map(item => ({
-      label: item?.label ?? '',
-      description: item?.description ?? '',
-    }))
-    request.onResult?.({ type: 'KEY_VALUE_LIST', items })
-  }
-
-  const output = await result.output
-  return { result: { type: 'KEY_VALUE_LIST', items: output.items }, reasoning }
+function emitResult(
+  outputType: OutputType,
+  content: string,
+  isComplete: boolean,
+  onResult?: PartialResultHandler
+) {
+  if (!onResult) return
+  onResult(buildAnalysisResult(outputType, content, isComplete))
 }
 
 async function createRequestOptions(request: GenerationRequest) {
@@ -115,8 +111,7 @@ async function createRequestOptions(request: GenerationRequest) {
     model: await createLanguageModel(request.provider, request.model),
     instructions: request.instructions,
     messages: request.messages,
-    temperature: request.model.temperature,
-    topP: request.model.topP,
+    reasoning: toSDKReasoning(request.thinking),
     abortSignal: request.abortSignal,
   }
 }

@@ -12,7 +12,7 @@ import { EventEmitter, EVENT_NAMES } from "@/services/EventService"
 import db from "@/services/DB"
 
 export default function Sider() {
-  const { readingId } = useSiderStore()
+  const { readingId, setSiderCollapsed } = useSiderStore()
   const { readingProgress, updateReadingProgress } = useReadingProgressStore()
   const currentLocation = useMemo(() => {
     return readingProgress.currentLocation || null
@@ -22,11 +22,17 @@ export default function Sider() {
 
   // 当返回阅读页面时 更新阅读进度
   useEffect(() => {
-    if (pathname.includes('/read') && readingId) {
-      updateReadingProgress(readingId)
+    if (pathname === '/' || pathname === '/home') {
+      setSiderCollapsed(true)
+    } else if (pathname.includes('/read')) {
+      setSiderCollapsed(false)
+      if (readingId) {
+        updateReadingProgress(readingId)
+      }
     }
-  }, [updateReadingProgress, pathname, readingId])
+  }, [updateReadingProgress, pathname, readingId, setSiderCollapsed])
   const updateLineIndex = useCallback(async (lineIndex: number) => {
+    setSiderCollapsed(false)
     // 发送完成后更新line
     if (!readingId) return
     await db.updateCurrentLocation(readingId, {
@@ -35,7 +41,7 @@ export default function Sider() {
     })
     const readingProgress = await updateReadingProgress(readingId)
     EventEmitter.emit(EVENT_NAMES.SEND_MESSAGE, readingProgress)
-  }, [readingId, currentLocation, updateReadingProgress])
+  }, [readingId, currentLocation, updateReadingProgress, setSiderCollapsed])
 
 
   useEffect(() => {

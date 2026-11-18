@@ -12,6 +12,9 @@ interface SiderStore {
   setThinkingExpanded: (expanded: boolean) => void
   chatShortcut: string
   setChatShortcut: (shortcut: string) => void
+  siderCollapsed: boolean
+  setSiderCollapsed: (collapsed: boolean) => void
+  toggleSiderCollapsed: () => void
 }
 
 export const useSiderStore = create<SiderStore>()(
@@ -27,6 +30,9 @@ export const useSiderStore = create<SiderStore>()(
       setThinkingExpanded: (expanded) => set({ thinkingExpanded: expanded }),
       chatShortcut: 'Ctrl+Shift+A',
       setChatShortcut: (shortcut) => set({ chatShortcut: shortcut }),
+      siderCollapsed: true,
+      setSiderCollapsed: (siderCollapsed) => set({ siderCollapsed }),
+      toggleSiderCollapsed: () => set((state) => ({ siderCollapsed: !state.siderCollapsed })),
     }),
     {
       name: 'sider-storage',

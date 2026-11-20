@@ -1,7 +1,7 @@
 'use client'
 
 import DesktopSetting from '@/app/_views/desktop/DesktopSetting'
-import MobileSettingTemp from '@/app/_views/mobile/MobileSettingTemp'
+import MobileSettingsHome from '@/app/_views/mobile/settings/MobileSettingsHome'
 import { useViewportMode } from '@/hooks/useViewportMode'
 
 export default function SettingPage() {
@@ -9,5 +9,5 @@ export default function SettingPage() {
 
   if (!mounted) return null
 
-  return mode === 'mobile' ? <MobileSettingTemp /> : <DesktopSetting />
+  return mode === 'mobile' ? <MobileSettingsHome /> : <DesktopSetting />
 }

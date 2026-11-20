@@ -1,3 +1,5 @@
+import { isTauriAndroid } from '@/utils/platform'
+
 export type BackHandler = () => boolean
 
 interface RegisteredHandler {
@@ -44,5 +46,23 @@ export function clearBackHandlersForTest(): void {
 }
 
 export async function initBackButtonListener(): Promise<() => void> {
-  return () => {}
+  if (!isTauriAndroid()) {
+    return () => {}
+  }
+
+  try {
+    const { onBackButtonPress, exit } = await import('@tauri-apps/api/app')
+    const listener = await onBackButtonPress(() => {
+      const handled = dispatchBackEvent()
+      if (!handled) {
+        void exit(0)
+      }
+    })
+    return () => {
+      void listener.unregister()
+    }
+  } catch (error) {
+    console.error('Failed to initialize Android back button listener:', error)
+    return () => {}
+  }
 }

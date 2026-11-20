@@ -1,0 +1,16 @@
+{
+  "identifier": "mobile-android",
+  "description": "Android native capabilities for back button exit, TTS, and SAF file access",
+  "platforms": [
+    "android"
+  ],
+  "windows": [
+    "main"
+  ],
+  "permissions": [
+    "core:app:allow-exit",
+    "tts:default",
+    "tts:allow-register-listener",
+    "android-fs:default"
+  ]
+}

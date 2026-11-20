@@ -6,6 +6,7 @@ import type { MenuProps } from 'antd'
 import {
   AlignLeftOutlined,
   AppstoreFilled,
+  CloudSyncOutlined,
   FileWordOutlined,
   OrderedListOutlined,
   SoundOutlined,
@@ -14,6 +15,7 @@ import { StarIcon } from '@/assets/icon'
 import { useTranslation } from '@/i18n/useTranslation'
 import {
   AiSection,
+  BackupSection,
   DefaultModelSection,
   PromptSection,
   SentenceProcessingSection,
@@ -63,6 +65,12 @@ export default function DesktopSetting() {
       icon: <SoundOutlined style={{ fontSize: 24 }} />,
       label: t('settings.ttsConfig'),
       content: <TTSSection />,
+    },
+    {
+      key: 'backup',
+      icon: <CloudSyncOutlined style={{ fontSize: 24 }} />,
+      label: t('backup.title'),
+      content: <BackupSection />,
     },
   ]
 

@@ -246,6 +246,24 @@ class BookDB extends Dexie {
    * @param bookId 书籍id
    * @returns {Promise<void>}
    */
+  async getReadingProgress(bookId: string): Promise<ReadingProgress | null> {
+    return (await this.readingProgress.get(bookId)) ?? null
+  }
+
+  async getAllReadingProgress(): Promise<ReadingProgress[]> {
+    return this.readingProgress.toArray()
+  }
+
+  async putBookAndProgress(book: Book, progress?: ReadingProgress | null): Promise<void> {
+    await this.transaction('rw', this.books, this.readingProgress, async () => {
+      await this.books.put(book)
+      if (progress) {
+        await this.readingProgress.put({ ...progress, bookId: book.id })
+      } else {
+        await this.addReadingProgress(book.id)
+      }
+    })
+  }
   async deleteReadingProgress(bookId: string): Promise<void> {
     const exists = await this.readingProgress.get(bookId)
     if (!exists) return

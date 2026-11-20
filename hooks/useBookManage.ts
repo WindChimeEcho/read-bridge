@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from '@/i18n/useTranslation'
+import { exportSingleBookBackup } from '@/services/BackupService'
 import db from '@/services/DB'
 import { notify } from '@/services/platform/notify'
 import { useBookmarkStore } from '@/store/useBookmarkStore'
@@ -97,8 +98,21 @@ export function useBookManage(bookId: string, options: { enabled?: boolean } = {
   }, [bookId, readingId, removeAllBookmarks, resetSession, setReadingId, t])
 
   const exportSingleBook = useCallback(async () => {
-    notify.info('Backup export will be enabled in Stage 4')
-  }, [])
+    if (!bookId) return
+    setSaving(true)
+    try {
+      const result = await exportSingleBookBackup(bookId)
+      if (result.saved) {
+        notify.success(t('backup.singleExportSuccess', { filename: result.filename }))
+      }
+    } catch (error) {
+      console.error('Error exporting book backup:', error)
+      const msg = error instanceof Error ? error.message : String(error)
+      notify.error(t('backup.exportFailed', { error: msg }))
+    } finally {
+      setSaving(false)
+    }
+  }, [bookId, t])
 
   return {
     book,

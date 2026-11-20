@@ -2,7 +2,7 @@
 
 import { FC, useState, useCallback } from 'react';
 import { Modal, Button, Typography, Divider, Popconfirm } from 'antd';
-import { DeleteOutlined, EditOutlined, InfoCircleOutlined } from '@ant-design/icons';
+import { DeleteOutlined, EditOutlined, ExportOutlined, InfoCircleOutlined } from '@ant-design/icons';
 import { Book } from '@/types/book';
 import { useRouter } from 'next/navigation';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -29,7 +29,7 @@ const BookDetailsModal: FC<BookDetailsModalProps> = ({
   const router = useRouter();
   const [, , updateBook] = useBook();
   const { t } = useTranslation();
-  const { book, loading, saving, saveBookChanges, deleteBook } = useBookManage(bookId, {
+  const { book, loading, saving, saveBookChanges, deleteBook, exportSingleBook } = useBookManage(bookId, {
     enabled: open,
   });
 
@@ -107,6 +107,15 @@ const BookDetailsModal: FC<BookDetailsModalProps> = ({
       )}
 
       <div className="flex justify-end gap-2">
+        <Button
+          icon={<ExportOutlined />}
+          loading={isBusy}
+          onClick={() => {
+            void exportSingleBook();
+          }}
+        >
+          {t('backup.exportBookButton')}
+        </Button>
         <Button
           type="primary"
           icon={<EditOutlined />}

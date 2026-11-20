@@ -1,10 +1,18 @@
 import { useState, memo, useCallback, useMemo } from 'react';
-import { Button, Typography, Empty, Popconfirm, Input, message } from 'antd';
+import { Button, Typography, Empty, Popconfirm, Input } from 'antd';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import { PlusOutlined, MenuOutlined, DeleteOutlined, CheckOutlined, CloseOutlined } from '@ant-design/icons';
-import { Book, PlainTextChapter } from '@/types/book';
+import { Book } from '@/types/book';
 import { useTranslation } from '@/i18n/useTranslation';
 import TextArea from 'antd/es/input/TextArea';
+import {
+  addChapter,
+  deleteChapter,
+  renameChapter,
+  reorderChapters,
+  updateChapterParagraphs,
+} from '@/services/ChapterUtils';
+import { notify } from '@/services/platform/notify';
 
 const { Text, Title } = Typography;
 
@@ -64,115 +72,44 @@ export default function ChapterManager({ book, onChange }: ChapterManagerProps) 
   const [selectedChapterIndex, setSelectedChapterIndex] = useState<number>(0);
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [editingTitle, setEditingTitle] = useState('');
-  // Handle drag end to reorder chapters
-  const handleDragEnd = async (result: DropResult) => {
-    if (!result.destination) return;
 
+  const handleDragEnd = (result: DropResult) => {
+    if (!result.destination) return;
     const sourceIndex = result.source.index;
     const destinationIndex = result.destination.index;
-
     if (sourceIndex === destinationIndex) return;
 
-    // Create copies to avoid direct state mutation
-    const newToc = [...book.toc];
-    const newChapterList = [...book.chapterList];
-
-    // Get the moving item
-    const [movedTocItem] = newToc.splice(sourceIndex, 1);
-    const [movedChapter] = newChapterList.splice(movedTocItem.index, 1);
-
-    // Insert at new position
-    newToc.splice(destinationIndex, 0, movedTocItem);
-
-    // Recalculate indices for toc items
-    const recalculatedToc = newToc.map((item, index) => ({
-      ...item,
-      index: index
-    }));
-
-    // Reorder chapter list to match toc
-    const reorderedChapterList = recalculatedToc.map(tocItem => {
-      if (tocItem.title === movedTocItem.title) {
-        return movedChapter;
-      }
-
-      const originalChapter = book.chapterList.find((_, i) =>
-        book.toc.find(t => t.index === i)?.title === tocItem.title
-      );
-
-      return originalChapter || { title: tocItem.title, paragraphs: [] };
-    });
-
-    const updatedBook = {
-      ...book,
-      toc: recalculatedToc,
-      chapterList: reorderedChapterList
-    };
+    const updatedBook = reorderChapters(book, sourceIndex, destinationIndex);
     onChange(updatedBook);
-    if (selectedChapterIndex === movedTocItem.index) {
+
+    if (selectedChapterIndex === sourceIndex) {
       setSelectedChapterIndex(destinationIndex);
+    } else if (sourceIndex < selectedChapterIndex && destinationIndex >= selectedChapterIndex) {
+      setSelectedChapterIndex(selectedChapterIndex - 1);
+    } else if (sourceIndex > selectedChapterIndex && destinationIndex <= selectedChapterIndex) {
+      setSelectedChapterIndex(selectedChapterIndex + 1);
     }
   };
 
   const handleAddChapter = useCallback(() => {
-    const newChapterIndex = book.chapterList.length;
-    const newChapterTitle = `${t('book.chapter')} ${newChapterIndex + 1}`;
-
-    const newChapter: PlainTextChapter = {
-      title: newChapterTitle,
-      paragraphs: []
-    };
-
-    const newTocItem: TocItem = {
-      title: newChapterTitle,
-      index: newChapterIndex
-    };
-
-    const updatedBook = {
-      ...book,
-      chapterList: [...book.chapterList, newChapter],
-      toc: [...book.toc, newTocItem]
-    };
-
+    const newChapterTitle = `${t('book.chapter')} ${book.chapterList.length + 1}`;
+    const { book: updatedBook, newIndex } = addChapter(book, newChapterTitle);
     onChange(updatedBook);
-    setSelectedChapterIndex(newChapterIndex);
+    setSelectedChapterIndex(newIndex);
   }, [book, onChange, t]);
 
   const handleDeleteChapter = useCallback(() => {
-    if (book.chapterList.length === 1) {
-      message.warning(t('book.atLeastOneChapter'));
+    const updatedBook = deleteChapter(book, selectedChapterIndex);
+    if (!updatedBook) {
+      notify.warning(t('book.atLeastOneChapter'));
       return;
     }
-    const newChapterList = [...book.chapterList];
-    newChapterList.splice(selectedChapterIndex, 1);
-
-    const tocItemToDelete = book.toc.find(item => item.index === selectedChapterIndex);
-    if (!tocItemToDelete) return;
-
-    const newToc = book.toc.filter(item => item.index !== selectedChapterIndex);
-
-    // 重新计算索引
-    const recalculatedToc = newToc.map((item, idx) => ({
-      ...item,
-      index: idx
-    }));
-
     setSelectedChapterIndex(0);
-    onChange({ ...book, chapterList: newChapterList, toc: recalculatedToc });
+    onChange(updatedBook);
   }, [book, onChange, selectedChapterIndex, t]);
 
   const handleEditChapterTitle = useCallback((title: string) => {
-    const newChapterList = [...book.chapterList];
-    newChapterList[selectedChapterIndex].title = title;
-
-    // 更新toc中对应章节的标题
-    const newToc = [...book.toc];
-    const tocIndex = newToc.findIndex(item => item.index === selectedChapterIndex);
-    if (tocIndex !== -1) {
-      newToc[tocIndex].title = title;
-    }
-
-    onChange({ ...book, chapterList: newChapterList, toc: newToc });
+    onChange(renameChapter(book, selectedChapterIndex, title));
   }, [book, onChange, selectedChapterIndex]);
 
   const startEditingTitle = useCallback(() => {
@@ -187,17 +124,15 @@ export default function ChapterManager({ book, onChange }: ChapterManagerProps) 
 
   const cancelEditTitle = useCallback(() => {
     setIsEditingTitle(false);
-  }, [setIsEditingTitle]);
+  }, []);
 
   const selectedChapterText = useMemo(() => {
     if (!book || !book.chapterList[selectedChapterIndex]) return '';
     return book.chapterList[selectedChapterIndex].paragraphs.join('\n');
   }, [book, selectedChapterIndex]);
 
-  const handleEditChapterText = useCallback(async (text: string) => {
-    const newChapterList = [...book.chapterList];
-    newChapterList[selectedChapterIndex].paragraphs = text.split('\n');
-    onChange({ ...book, chapterList: newChapterList });
+  const handleEditChapterText = useCallback((text: string) => {
+    onChange(updateChapterParagraphs(book, selectedChapterIndex, text.split('\n')));
   }, [book, onChange, selectedChapterIndex]);
 
   if (!book) return null;
@@ -299,4 +234,4 @@ export default function ChapterManager({ book, onChange }: ChapterManagerProps) 
       </div>
     </div>
   );
-} 
+}

@@ -4,18 +4,18 @@ import { Menu, Button, List, Empty, Popconfirm } from 'antd'
 import { MenuFoldOutlined, MenuUnfoldOutlined, BookOutlined, DeleteOutlined } from '@ant-design/icons'
 import { Book, Bookmark } from '@/types/book'
 import { useSiderStore } from '@/store/useSiderStore'
-import { useBookmarkStore } from '@/store/useBookmarkStore'
-import { useBook } from '@/hooks/useBook'
 import { useTranslation } from '@/i18n/useTranslation'
 import { useState } from 'react'
 
 interface ReadMenuProps {
   toc: Book['toc']
   currentChapter: number
+  bookmarks: Bookmark[]
   onChapterChange: (index: number, lineIndex: number) => void
+  onBookmarkClick: (bookmark: Bookmark) => Promise<void>
+  onDeleteBookmark: (bookmark: Bookmark) => void
 }
 
-// 渲染目录菜单函数
 const renderTocMenu = (
   toc: Book['toc'],
   currentChapter: number,
@@ -25,7 +25,7 @@ const renderTocMenu = (
   const menuItems = toc.map(({ title, index }) => ({
     key: index,
     label: collapsed ? index + 1 : title,
-    title: title
+    title: title,
   }))
 
   return (
@@ -37,13 +37,12 @@ const renderTocMenu = (
       selectedKeys={[String(currentChapter)]}
       inlineCollapsed={collapsed}
       items={menuItems}
-      onClick={({ key }) => onChapterChange(parseInt(key), 0)}
+      onClick={({ key }) => onChapterChange(parseInt(key, 10), 0)}
       className="flex-1 overflow-auto"
     />
   )
 }
 
-// 渲染书签列表函数
 const renderBookmarkList = (
   bookmarks: Bookmark[],
   handleBookmarkClick: (bookmark: Bookmark) => void,
@@ -77,8 +76,11 @@ const renderBookmarkList = (
             >
               <List.Item.Meta
                 title={
-                  <div className="text-sm font-medium truncate cursor-pointer"
-                    onClick={() => handleBookmarkClick(bookmark)} title={bookmark.sentence}>
+                  <div
+                    className="text-sm font-medium truncate cursor-pointer"
+                    onClick={() => handleBookmarkClick(bookmark)}
+                    title={bookmark.sentence}
+                  >
                     {bookmark.sentence.length > 40
                       ? bookmark.sentence.substring(0, 40) + '...'
                       : bookmark.sentence}
@@ -104,32 +106,25 @@ const renderBookmarkList = (
   )
 }
 
-export default function ReadMenu({ toc, currentChapter, onChapterChange }: ReadMenuProps) {
-  const { collapsed, setCollapsed, readingId } = useSiderStore()
-  const { getBookmarksByBookId, removeBookmark } = useBookmarkStore()
-  const [book] = useBook()
+export default function ReadMenu({
+  toc,
+  currentChapter,
+  bookmarks,
+  onChapterChange,
+  onBookmarkClick,
+  onDeleteBookmark,
+}: ReadMenuProps) {
+  const { collapsed, setCollapsed } = useSiderStore()
   const [mode, setMode] = useState<'toc' | 'bookmark'>('toc')
   const { t } = useTranslation()
 
-  // 获取当前书籍的书签
-  const bookmarks = book ? getBookmarksByBookId(book.id) : []
-
-  // 处理书签点击跳转
   const handleBookmarkClick = async (bookmark: Bookmark) => {
-    if (!readingId) return
     try {
-      await onChapterChange(bookmark.chapterIndex, bookmark.lineIndex)
-      // 跳转后切换回目录模式
+      await onBookmarkClick(bookmark)
       setMode('toc')
     } catch (error) {
       console.error('跳转书签失败:', error)
     }
-  }
-
-  // 处理确认删除书签
-  const handleConfirmDeleteBookmark = (bookmark: Bookmark) => {
-    if (!book) return
-    removeBookmark(book.id, bookmark.id)
   }
 
   const switchToToc = () => {
@@ -169,7 +164,7 @@ export default function ReadMenu({ toc, currentChapter, onChapterChange }: ReadM
 
       {mode === 'toc'
         ? renderTocMenu(toc, currentChapter, onChapterChange, collapsed)
-        : renderBookmarkList(bookmarks, handleBookmarkClick, handleConfirmDeleteBookmark, t)}
+        : renderBookmarkList(bookmarks, handleBookmarkClick, onDeleteBookmark, t)}
     </div>
   )
 }

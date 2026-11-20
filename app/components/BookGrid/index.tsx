@@ -2,6 +2,7 @@
 
 import { Row, Col, Button } from 'antd';
 import { BookPreview, Resource } from '@/types/book';
+import { formatCoverDataUrl } from '@/utils/book';
 import BookUploader from '@/app/components/BookUploader';
 import { useStyleStore } from '@/store/useStyleStore';
 import { useRouter } from 'next/navigation';
@@ -78,11 +79,8 @@ export default function BookGrid({ books }: BookGridProps) {
   );
 }
 
-function handleBase64(base64: string) {
-  return `data:image/jpeg;base64,${base64}`
-}
-
 const BookCover = ({ cover, title }: { cover: Resource | undefined, title: string }) => {
+  const coverSrc = formatCoverDataUrl(cover);
   const imageCSS = `
     w-full
     h-full
@@ -101,9 +99,9 @@ const BookCover = ({ cover, title }: { cover: Resource | undefined, title: strin
     dark:bg-[var(--ant-color-bg-elevated)]
   `
   return (
-    cover ? (
+    coverSrc ? (
       // eslint-disable-next-line @next/next/no-img-element
-      <img className={imageCSS} src={handleBase64(cover.data)} alt={title} />
+      <img className={imageCSS} src={coverSrc} alt={title} />
     ) : (
       <div className={noCoverCSS}>
         No Cover

@@ -1,16 +1,32 @@
-import { useHistoryStore } from "@/store/useHistoryStore";
 import { Button, Modal } from "antd";
 import { useCallback, useState } from "react";
 import { EditOutlined, DeleteOutlined, CheckOutlined, CloseOutlined } from "@ant-design/icons";
 import { LLMHistory } from "@/types/llm";
-type ChatHistory = {
-  isModalOpen: boolean
-  onClose: () => void
-  onSelect: (id: string) => void
+
+type ChatHistoryGroup = {
+  label: string
+  items: LLMHistory[]
 }
 
-export default function ChatHistory({ isModalOpen, onClose, onSelect }: ChatHistory) {
-  const { groupHistoryByTime, history, deleteHistory, updateHistory } = useHistoryStore()
+type ChatHistory = {
+  isModalOpen: boolean
+  history: LLMHistory
+  groupedHistory: ChatHistoryGroup[]
+  onClose: () => void
+  onSelect: (id: string) => void
+  onDelete: (item: LLMHistory) => void
+  onRename: (item: LLMHistory, title: string) => void
+}
+
+export default function ChatHistory({
+  isModalOpen,
+  history,
+  groupedHistory,
+  onClose,
+  onSelect,
+  onDelete,
+  onRename,
+}: ChatHistory) {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editingTitle, setEditingTitle] = useState<string>('')
 
@@ -23,15 +39,12 @@ export default function ChatHistory({ isModalOpen, onClose, onSelect }: ChatHist
     setEditingTitle(item.title)
   }, [])
   const handleDeleteHistory = useCallback((item: LLMHistory) => {
-    deleteHistory(item)
-  }, [deleteHistory])
+    onDelete(item)
+  }, [onDelete])
   const handleSaveEdit = useCallback((item: LLMHistory) => {
-    updateHistory({
-      ...item,
-      title: editingTitle
-    })
+    onRename(item, editingTitle)
     setEditingId(null)
-  }, [updateHistory, editingTitle])
+  }, [onRename, editingTitle])
   const handleCancelEdit = useCallback(() => {
     setEditingId(null)
   }, [])
@@ -44,7 +57,7 @@ export default function ChatHistory({ isModalOpen, onClose, onSelect }: ChatHist
   return (
     <Modal title="历史记录" open={isModalOpen} footer={<></>} onCancel={handleCancel} >
       {
-        groupHistoryByTime().map((group) => (
+        groupedHistory.map((group) => (
           <div key={group.label}>
             <div className="text-sm font-bold mb-2">{group.label}</div>
             {group.items.map((item) => (

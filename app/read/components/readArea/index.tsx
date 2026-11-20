@@ -1,9 +1,8 @@
 import { Book, ReadingProgress } from "@/types/book"
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
-import db from "@/services/DB"
-import { EVENT_NAMES, EventEmitter } from "@/services/EventService"
+import React, { useCallback } from "react"
 import { Radio } from "antd"
 import { useStyleStore, FontSize } from "@/store/useStyleStore"
+import { useReadArea } from "@/hooks/useReadArea"
 
 const FONT_SIZE_CLASSES: Record<FontSize, string> = {
   small: 'text-sm',
@@ -25,106 +24,18 @@ const RADIO_SIZE_CLASSES: Record<FontSize, string> = {
 
 export default function ReadArea({ book, readingProgress }: { book: Book, readingProgress: ReadingProgress }) {
   const { fontSize } = useStyleStore()
+  const {
+    title,
+    lines,
+    selectedLineIndex,
+    containerRef,
+    setLineRef,
+    onSelectSentence,
+  } = useReadArea(book, readingProgress)
 
-  const title = useMemo(() => {
-    return book.chapterList[readingProgress.currentLocation.chapterIndex]?.title || ''
-  }, [book, readingProgress.currentLocation.chapterIndex])
-
-  const lines = useMemo(() => {
-    return readingProgress.sentenceChapters[readingProgress.currentLocation.chapterIndex] ?? []
-  }, [readingProgress.sentenceChapters, readingProgress.currentLocation.chapterIndex])
-
-  const containerRef = useRef<HTMLDivElement>(null)
-  const [selectedLine, setSelectedLine] = useState<number>(Infinity)
-  const lineRefsMap = useRef<Map<number, HTMLDivElement>>(new Map())
-  const scrollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-
-  useEffect(() => {
-    setSelectedLine(readingProgress.currentLocation.lineIndex)
-  }, [readingProgress.currentLocation.chapterIndex, readingProgress.currentLocation.lineIndex])
-
-  // 页面加载时滚动到上次阅读位置
-  useEffect(() => {
-    const container = containerRef.current;
-    if (!container) return;
-
-    const savedLineIndex = readingProgress.currentLocation.lineIndex;
-    if (savedLineIndex !== undefined && savedLineIndex !== Infinity && savedLineIndex > 0) {
-      // 等待DOM
-      const timer = setTimeout(() => {
-        const lineElement = lineRefsMap.current.get(savedLineIndex);
-        if (lineElement) {
-          lineElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        } else {
-          container.scrollTo({ top: 0, behavior: 'smooth' });
-        }
-      }, 100);
-      return () => clearTimeout(timer)
-    } else {
-      container.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-  }, [lines, readingProgress.currentLocation.lineIndex]);
-
-  // 滚动停止后保存当前阅读位置
-  useEffect(() => {
-    const container = containerRef.current;
-    if (!container) return;
-
-    const handleScroll = () => {
-      if (scrollTimeoutRef.current) {
-        clearTimeout(scrollTimeoutRef.current);
-      }
-
-      scrollTimeoutRef.current = setTimeout(() => {
-        const containerRect = container.getBoundingClientRect();
-        const containerTop = containerRect.top + 10;
-
-        const visibleLineIndex = findFirstVisibleLine(
-          lines,
-          lineRefsMap.current,
-          containerTop,
-          containerRect.bottom
-        )
-
-        // save
-        if (visibleLineIndex !== Infinity && visibleLineIndex >= 0) {
-          void db.updateCurrentLocation(book.id, {
-            chapterIndex: readingProgress.currentLocation.chapterIndex,
-            lineIndex: visibleLineIndex
-          });
-        }
-      }, 300);
-    };
-
-    container.addEventListener('scroll', handleScroll);
-    return () => {
-      container.removeEventListener('scroll', handleScroll);
-      if (scrollTimeoutRef.current) {
-        clearTimeout(scrollTimeoutRef.current);
-      }
-    };
-  }, [book.id, readingProgress.currentLocation.chapterIndex, lines]);
-
-  // 处理行点击
   const handleLineClick = useCallback((index: number) => {
-    setSelectedLine((prev) => {
-      EventEmitter.emit(EVENT_NAMES.SEND_LINE_INDEX, index);
-      if (prev !== index) void db.updateCurrentLocation(book.id, {
-        chapterIndex: readingProgress.currentLocation.chapterIndex,
-        lineIndex: index
-      });
-      return index;
-    });
-  }, [book.id, readingProgress.currentLocation.chapterIndex]);
-
-  // 记录每行DOM引用
-  const setLineRef = useCallback((element: HTMLDivElement | null, index: number) => {
-    if (element) {
-      lineRefsMap.current.set(index, element);
-    } else {
-      lineRefsMap.current.delete(index);
-    }
-  }, []);
+    void onSelectSentence(index)
+  }, [onSelectSentence])
 
   return (
     <div
@@ -137,7 +48,7 @@ export default function ReadArea({ book, readingProgress }: { book: Book, readin
           <Line
             sentence={sentence}
             index={index}
-            isSelected={selectedLine === index}
+            isSelected={selectedLineIndex === index}
             key={index}
             handleLineClick={handleLineClick}
             setLineRef={setLineRef}
@@ -149,7 +60,6 @@ export default function ReadArea({ book, readingProgress }: { book: Book, readin
   )
 }
 
-// 单行组件，使用memo优化性能
 const Line = React.memo(({ sentence, index, isSelected, handleLineClick, setLineRef, size }: {
   sentence: string,
   index: number,
@@ -183,37 +93,3 @@ const Line = React.memo(({ sentence, index, isSelected, handleLineClick, setLine
   )
 })
 Line.displayName = 'Line'
-
-function findFirstVisibleLine(
-  lines: string[],
-  elements: Map<number, HTMLDivElement>,
-  viewportTop: number,
-  viewportBottom: number
-): number {
-  let lower = 0
-  let upper = lines.length - 1
-  let firstVisible = Infinity
-
-  while (lower <= upper) {
-    const middle = Math.floor((lower + upper) / 2)
-    const element = elements.get(middle)
-    if (!element) break
-
-    if (element.getBoundingClientRect().bottom >= viewportTop) {
-      firstVisible = middle
-      upper = middle - 1
-    } else {
-      lower = middle + 1
-    }
-  }
-
-  for (let index = firstVisible; index < lines.length; index += 1) {
-    const element = elements.get(index)
-    if (!element) continue
-    const rect = element.getBoundingClientRect()
-    if (rect.top > viewportBottom) break
-    if (lines[index] && rect.bottom >= viewportTop) return index
-  }
-
-  return Infinity
-}

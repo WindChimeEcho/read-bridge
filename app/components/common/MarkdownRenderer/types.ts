@@ -1,5 +1,7 @@
+import type { ReadingTheme } from '@/config/theme'
+
 export interface ChatMarkdownProps {
   content: string
-  theme: 'light' | 'dark'
+  theme: ReadingTheme
   className?: string
 }

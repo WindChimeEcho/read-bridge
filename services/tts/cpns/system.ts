@@ -1,156 +1,185 @@
 import { TTSAPI, Voice } from "@/types/tts";
 
-function getSystemTTS(): TTSAPI {
-  // 检查浏览器是否支持语音合成API
+export type TTSStatus = {
+  isSpeaking: boolean;
+  isPaused: boolean;
+};
+
+export type TTSStatusListener = (status: TTSStatus) => void;
+
+export interface SystemTTSAPI extends TTSAPI {
+  isAvailable: () => Promise<boolean>;
+  speak: (text: string, voiceType: string, speedRatio: number) => Promise<void>;
+  subscribeStatus: (listener: TTSStatusListener) => () => void;
+}
+
+function getSystemTTS(): SystemTTSAPI {
   const isSpeechSynthesisSupported = typeof window !== 'undefined' &&
     'speechSynthesis' in window &&
     'SpeechSynthesisUtterance' in window;
 
-  // 判断是否正在播放语音
   let isSpeaking = false;
-  // 判断是否暂停
   let isPaused = false;
+  let startTimeoutId: ReturnType<typeof setTimeout> | null = null;
+  let activeUtteranceId = 0;
+  const listeners = new Set<TTSStatusListener>();
+
+  function emitStatus() {
+    const snapshot = { isSpeaking, isPaused };
+    listeners.forEach(listener => listener(snapshot));
+  }
+
+  function setStatus(speaking: boolean, paused: boolean) {
+    if (isSpeaking === speaking && isPaused === paused) return;
+    isSpeaking = speaking;
+    isPaused = paused;
+    emitStatus();
+  }
+
+  function clearStartTimeout() {
+    if (startTimeoutId !== null) {
+      clearTimeout(startTimeoutId);
+      startTimeoutId = null;
+    }
+  }
+
+  async function isAvailable(): Promise<boolean> {
+    return isSpeechSynthesisSupported;
+  }
 
   async function getVoices(): Promise<Voice[]> {
     return new Promise((resolve) => {
       if (!isSpeechSynthesisSupported) {
-        console.warn('Speech synthesis is not supported in this browser');
         resolve([]);
         return;
       }
 
-      // 获取最新的声音列表
       const synthVoices = window.speechSynthesis.getVoices();
-
       if (synthVoices.length > 0) {
         resolve(synthVoices);
-      } else {
-        // 第一次调用返回空时，设置监听器等待 voiceschanged 事件
-        const handleVoicesChanged = () => {
-          clearTimeout(timeoutId);
-          window.speechSynthesis.removeEventListener('voiceschanged', handleVoicesChanged);
-          resolve(window.speechSynthesis.getVoices());
-        };
-
-        // 添加超时机制，防止无限等待
-        const timeoutId = setTimeout(() => {
-          window.speechSynthesis.removeEventListener('voiceschanged', handleVoicesChanged);
-          console.warn('voiceschanged event timeout, returning empty voice list');
-          resolve([]);
-        }, 3000); // 3秒超时
-
-        window.speechSynthesis.addEventListener('voiceschanged', handleVoicesChanged);
+        return;
       }
+
+      const handleVoicesChanged = () => {
+        clearTimeout(timeoutId);
+        window.speechSynthesis.removeEventListener('voiceschanged', handleVoicesChanged);
+        resolve(window.speechSynthesis.getVoices());
+      };
+
+      const timeoutId = setTimeout(() => {
+        window.speechSynthesis.removeEventListener('voiceschanged', handleVoicesChanged);
+        resolve([]);
+      }, 3000);
+
+      window.speechSynthesis.addEventListener('voiceschanged', handleVoicesChanged);
     });
   }
-  getVoices()
+
+  if (isSpeechSynthesisSupported) {
+    void getVoices();
+  }
+
   async function speak(text: string, voiceType: string, speedRatio: number): Promise<void> {
     if (!isSpeechSynthesisSupported) {
-      console.warn('Speech synthesis is not supported in this browser');
       return;
     }
 
-    // 停止当前正在播放的语音
+    const utteranceId = ++activeUtteranceId;
+    clearStartTimeout();
     window.speechSynthesis.cancel();
-    isPaused = false;
+    setStatus(false, false);
 
     const utterance = new SpeechSynthesisUtterance(text);
     const voices = await getVoices();
+    if (utteranceId !== activeUtteranceId) return;
 
-    // 查找请求的声音类型
     const voice = voices.find(v => v.name === voiceType);
-
     if (voice) {
       utterance.voice = voice as SpeechSynthesisVoice;
-    } else {
-      console.warn(`Voice "${voiceType}" not found, using default voice`);
     }
 
-    // 设置语音速率
     utterance.rate = speedRatio;
 
-    // 添加超时检测
     let hasStarted = false;
-    const timeoutId = setTimeout(() => {
-      if (!hasStarted) {
-        console.error('Speech synthesis timeout: Voice not started after 5 seconds');
-        stop();
-        isSpeaking = false;
-      }
+    startTimeoutId = setTimeout(() => {
+      if (utteranceId !== activeUtteranceId || hasStarted) return;
+      console.error('Speech synthesis timeout: Voice not started after 5 seconds');
+      stop();
     }, 5000);
 
-    // 设置事件处理器
     utterance.onstart = () => {
+      if (utteranceId !== activeUtteranceId) return;
       hasStarted = true;
-      clearTimeout(timeoutId);
-      isSpeaking = true;
+      clearStartTimeout();
+      setStatus(true, false);
     };
 
     utterance.onend = () => {
-      clearTimeout(timeoutId);
-      isSpeaking = false;
-      isPaused = false;
+      if (utteranceId !== activeUtteranceId) return;
+      clearStartTimeout();
+      setStatus(false, false);
     };
 
     utterance.onerror = (event) => {
-      clearTimeout(timeoutId);
-      // 以防主动终端时显示预期中的报错
-      if (event.error !== 'interrupted') {
+      if (utteranceId !== activeUtteranceId) return;
+      clearStartTimeout();
+      if (event.error !== 'interrupted' && event.error !== 'canceled') {
         console.error('Speech synthesis error:', event);
       }
-      isSpeaking = false;
-      isPaused = false;
+      setStatus(false, false);
     };
 
-    // 开始播放语音
     window.speechSynthesis.speak(utterance);
   }
 
-  // 暂停语音播放
   function pause(): void {
     if (!isSpeechSynthesisSupported || !isSpeaking || isPaused) {
       return;
     }
 
     window.speechSynthesis.pause();
-    isPaused = true;
+    setStatus(true, true);
   }
 
-  // 恢复语音播放
   function resume(): void {
     if (!isSpeechSynthesisSupported || !isSpeaking || !isPaused) {
       return;
     }
 
     window.speechSynthesis.resume();
-    isPaused = false;
+    setStatus(true, false);
   }
 
-  // 停止语音播放
   function stop(): void {
-    if (!isSpeechSynthesisSupported) {
-      return;
+    activeUtteranceId += 1;
+    clearStartTimeout();
+    if (isSpeechSynthesisSupported) {
+      window.speechSynthesis.cancel();
     }
-
-    window.speechSynthesis.cancel();
-    isSpeaking = false;
-    isPaused = false;
+    setStatus(false, false);
   }
 
-  // 获取当前状态
-  function getStatus(): { isSpeaking: boolean; isPaused: boolean } {
+  function getStatus(): TTSStatus {
     return { isSpeaking, isPaused };
   }
 
+  function subscribeStatus(listener: TTSStatusListener): () => void {
+    listeners.add(listener);
+    return () => {
+      listeners.delete(listener);
+    };
+  }
+
   return {
+    isAvailable,
     getVoices,
     speak,
     pause,
     resume,
     stop,
-    getStatus
-  }
+    getStatus,
+    subscribeStatus,
+  };
 }
 
-export default getSystemTTS
-
+export default getSystemTTS;

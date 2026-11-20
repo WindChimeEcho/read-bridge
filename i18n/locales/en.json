@@ -221,5 +221,12 @@
     "small": "S",
     "medium": "M",
     "large": "L"
+  },
+  "theme": {
+    "light": "White",
+    "paper": "Paper",
+    "dark": "Dark",
+    "changeTextColor": "Apply Text Color",
+    "resetTextColor": "Reset"
   }
 }

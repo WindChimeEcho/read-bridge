@@ -2,32 +2,32 @@
 
 import { useMemo } from 'react'
 import { Spin } from 'antd'
-import { useTheme } from 'next-themes'
 import ChatMarkdown from '../MarkdownRenderer'
 import { useStyleStore } from '@/store/useStyleStore'
+import { getEffectiveTextColor } from '@/config/theme'
 import type { ChatMarkdownWrapperProps } from './types'
 import './index.css'
 
 export default function ChatMarkdownWrapper({
   content,
   loading = false,
-  className = ''
+  className = '',
 }: ChatMarkdownWrapperProps) {
-  const { theme } = useTheme()
-  const { fontSize, lightModeTextColor, darkModeTextColor } = useStyleStore()
+  const {
+    readingTheme,
+    fontSize,
+    lightModeTextColor,
+    darkModeTextColor,
+    useCustomTextColor,
+  } = useStyleStore()
 
-  // Get current text color based on theme
-  const currentTextColor = useMemo(() => {
-    return theme === 'dark' ? darkModeTextColor : lightModeTextColor
-  }, [theme, darkModeTextColor, lightModeTextColor])
+  const currentTextColor = useMemo(
+    () => getEffectiveTextColor(readingTheme, lightModeTextColor, darkModeTextColor, useCustomTextColor),
+    [readingTheme, lightModeTextColor, darkModeTextColor, useCustomTextColor]
+  )
 
-  // Build font size class
-  const fontSizeClass = `markdown-wrapper-${fontSize}`
+  const wrapperClassName = `markdown-wrapper-${fontSize} ${className}`
 
-  // Build combined class name
-  const wrapperClassName = `${fontSizeClass} ${className}`
-
-  // Loading state
   if (loading) {
     return (
       <div className={`flex items-center justify-center ${className}`}>
@@ -39,13 +39,11 @@ export default function ChatMarkdownWrapper({
   return (
     <div
       className={wrapperClassName}
-      style={{
-        color: currentTextColor
-      } as React.CSSProperties}
+      style={{ color: currentTextColor }}
     >
       <ChatMarkdown
         content={content}
-        theme={theme as 'light' | 'dark'}
+        theme={readingTheme}
         className="w-full h-full"
       />
     </div>

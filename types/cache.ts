@@ -28,6 +28,8 @@ export interface CacheSystem {
 export interface CacheKeyParams {
   bookId: string
   sentence: string
+  contextBefore?: string
+  contextAfter?: string
   ruleId: string
   rulePrompt: string
   outputType: OutputType

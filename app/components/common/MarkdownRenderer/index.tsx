@@ -170,11 +170,11 @@ export default function ChatMarkdown({ content, theme, className = '' }: ChatMar
 
   const processedContent = useMemo(() => preprocessMarkdown(content), [content])
 
-  // Theme class selection
-  const themeClass = useMemo(
-    () => (theme === 'dark' ? 'markdown-dark' : 'markdown-light'),
-    [theme]
-  )
+  const themeClass = useMemo(() => {
+    if (theme === 'dark') return 'markdown-dark'
+    if (theme === 'paper') return 'markdown-paper'
+    return 'markdown-light'
+  }, [theme])
 
   return (
     <div className={`markdown ${themeClass} ${className} w-full h-full overflow-auto`}>

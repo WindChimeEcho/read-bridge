@@ -7,20 +7,29 @@
 
 /* Light theme variables */
 .markdown-light {
-  --code-bg: #f6f8fa;
-  --code-border: #d1d9e0;
-  --blockquote-border: #d1d9e0;
-  --table-border: #d1d9e0;
-  --table-header-bg: #f6f8fa;
+  --code-bg: #F6F8FA;
+  --code-border: #D1D9E0;
+  --blockquote-border: #D1D9E0;
+  --table-border: #E5E7EB;
+  --table-header-bg: #F3F4F6;
+}
+
+/* Paper theme variables */
+.markdown-paper {
+  --code-bg: #EFECE6;
+  --code-border: #DFD9CC;
+  --blockquote-border: #CFC7B8;
+  --table-border: #E6E1D6;
+  --table-header-bg: #EFECE6;
 }
 
 /* Dark theme variables */
 .markdown-dark {
-  --code-bg: #161b22;
-  --code-border: #30363d;
-  --blockquote-border: #30363d;
-  --table-border: #30363d;
-  --table-header-bg: #161b22;
+  --code-bg: #1E1E26;
+  --code-border: #32323E;
+  --blockquote-border: #3F3F4E;
+  --table-border: #2E2E38;
+  --table-header-bg: #202026;
 }
 
 /* Headings */

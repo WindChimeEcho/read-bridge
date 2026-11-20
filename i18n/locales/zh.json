@@ -223,5 +223,12 @@
     "small": "小",
     "medium": "中",
     "large": "大"
+  },
+  "theme": {
+    "light": "纯白清爽",
+    "paper": "暖纸护眼",
+    "dark": "夜间深色",
+    "changeTextColor": "更改字体颜色",
+    "resetTextColor": "恢复默认"
   }
 }

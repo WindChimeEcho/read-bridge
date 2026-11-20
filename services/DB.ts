@@ -1,7 +1,7 @@
 // web only
 
 import Dexie, { Table } from 'dexie'
-import { Book, BookPreview, ReadingProgress } from '@/types/book'
+import { Book, BookPreview, ReadingProgress, RecentReadingSummary } from '@/types/book'
 import { paragraphsToLines, SENTENCE_FORMAT_VERSION } from '@/services/SentenceService'
 
 const DB_SEARCH_KEYS = ['&id', 'title', 'fileHash', 'author', 'createTime', 'lastReadTime', 'metadata.identifier', 'metadata.language']
@@ -23,17 +23,19 @@ class BookDB extends Dexie {
    * @returns 返回新增书籍的id 
    */
   async addBook(book: Book): Promise<string> {
-    const exists = await this.books
-      .where('fileHash')
-      .equals(book.fileHash)
-      .first()
+    return this.transaction('rw', this.books, this.readingProgress, async () => {
+      const exists = await this.books
+        .where('fileHash')
+        .equals(book.fileHash)
+        .first()
 
-    if (exists) {
-      throw new Error('Book already exists')
-    }
-    const id = await this.books.add(book)
-    await this.addReadingProgress(id)
-    return id
+      if (exists) {
+        throw new Error('Book already exists')
+      }
+      const id = await this.books.add(book)
+      await this.addReadingProgress(id)
+      return id
+    })
   }
 
   /**
@@ -317,6 +319,47 @@ class BookDB extends Dexie {
       update.sentenceFormatVersion = SENTENCE_FORMAT_VERSION
     }
     await this.readingProgress.update(bookId, update)
+  }
+
+  async getRecentReadingSummary(): Promise<RecentReadingSummary | null> {
+    const progressList = await this.readingProgress.orderBy('lastReadTime').reverse().toArray()
+    for (const progress of progressList) {
+      const book = await this.books.get(progress.bookId)
+      if (!book) continue
+      const totalChapters = book.chapterList.length
+      const chapterIndex = Math.min(
+        Math.max(0, progress.currentLocation?.chapterIndex ?? 0),
+        Math.max(0, totalChapters - 1)
+      )
+      const chapterTitle = book.chapterList[chapterIndex]?.title || book.toc[chapterIndex]?.title || ''
+      return {
+        bookId: book.id,
+        title: book.title,
+        author: book.author,
+        cover: book.metadata.cover,
+        chapterIndex,
+        chapterTitle,
+        totalChapters,
+        lineIndex: progress.currentLocation?.lineIndex ?? 0,
+        lastReadTime: progress.lastReadTime ?? book.createTime ?? 0,
+      }
+    }
+
+    const books = await this.books.toArray()
+    if (books.length === 0) return null
+    books.sort((a, b) => (b.createTime ?? 0) - (a.createTime ?? 0))
+    const latest = books[0]
+    return {
+      bookId: latest.id,
+      title: latest.title,
+      author: latest.author,
+      cover: latest.metadata.cover,
+      chapterIndex: 0,
+      chapterTitle: latest.chapterList[0]?.title || latest.toc[0]?.title || '',
+      totalChapters: latest.chapterList.length,
+      lineIndex: 0,
+      lastReadTime: latest.createTime ?? 0,
+    }
   }
 }
 

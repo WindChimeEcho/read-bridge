@@ -2,6 +2,7 @@ import { BOOK_FORMAT, BOOK_MIME_TYPE } from '@/constants/book';
 
 export type BOOK_FORMAT_TYPE = typeof BOOK_FORMAT[keyof typeof BOOK_FORMAT];
 export type BOOK_MIME_TYPE_TYPE = typeof BOOK_MIME_TYPE[keyof typeof BOOK_MIME_TYPE];
+
 export interface Resource {
   data: string;    // base64
   mediaType: string;
@@ -28,6 +29,7 @@ export interface PlainTextChapter {
   title: string;
   paragraphs: string[];
 }
+
 interface TocItem {
   title: string;
   index: number;
@@ -49,6 +51,18 @@ export interface BookPreview {
   title: string;
   author?: string;
   cover?: Resource;
+}
+
+export interface RecentReadingSummary {
+  bookId: string;
+  title: string;
+  author?: string;
+  cover?: Resource;
+  chapterIndex: number;
+  chapterTitle: string;
+  totalChapters: number;
+  lineIndex: number;
+  lastReadTime: number;
 }
 
 export interface ReadingProgress {

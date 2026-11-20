@@ -2,10 +2,10 @@ import { LLMHistory } from "@/types/llm";
 import { memo, useCallback, useState } from "react";
 import { Button, Collapse, message } from "antd";
 import dayjs from "dayjs";
-import { useTheme } from "next-themes"
 import { SyncOutlined, LoadingOutlined } from "@ant-design/icons";
 import { CopyIcon } from "@/assets/icon";
 import { useSiderStore } from "@/store/useSiderStore";
+import { useStyleStore } from "@/store/useStyleStore";
 import MarkdownRendererWrapper from "@/app/components/common/MarkdownRendererWrapper";
 import { createMessageBubbleStyles } from "./MessageBubble.styles";
 
@@ -16,13 +16,12 @@ const MessageBubble = memo(function MessageBubble({
   msg: LLMHistory['messages'][number],
   isUser: boolean
 }) {
-  const { theme } = useTheme();
-  const isDarkMode = theme === 'dark'
+  const { readingTheme } = useStyleStore();
   const { thinkingExpanded, setThinkingExpanded } = useSiderStore()
   const [activeKey, setActiveKey] = useState<string | string[]>(thinkingExpanded ? ['thinking'] : [])
 
   // 获取样式对象
-  const styles = createMessageBubbleStyles({ isUser, isDarkMode })
+  const styles = createMessageBubbleStyles({ isUser, readingTheme })
 
   const handleCollapseChange = useCallback((key: string | string[]) => {
     setActiveKey(key);

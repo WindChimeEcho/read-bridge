@@ -3,10 +3,9 @@ import { persist } from 'zustand/middleware'
 import { LLMHistory } from '@/types/llm'
 import dayjs from 'dayjs'
 
-
 interface HistoryStore {
   history: LLMHistory | null
-  setHistory: (newHistory: LLMHistory | null) => void,
+  setHistory: (newHistory: LLMHistory | null) => void
   historys: LLMHistory[]
   deleteHistory: (history: LLMHistory) => void
   updateHistory: (history: LLMHistory) => void
@@ -23,29 +22,45 @@ export const useHistoryStore = create<HistoryStore>()(
       history: null,
       setHistory: (newHistory: LLMHistory | null) => set((state) => {
         if (!newHistory) return { history: null }
-        const { historys } = state
-        const index = historys.findIndex(item => item.id === newHistory.id)
-        if (index === -1 && newHistory.messages.length > 0) {
-          return { history: newHistory, historys: [...historys, newHistory] }
-        } else if (index !== -1 && newHistory.messages.length === 0) {
-          historys.splice(index, 1)
-          return { history: newHistory }
-        } else {
-          historys[index] = newHistory
-          return { history: newHistory, historys }
+
+        const index = state.historys.findIndex(item => item.id === newHistory.id)
+        if (index === -1) {
+          if (newHistory.messages.length === 0) {
+            return { history: newHistory }
+          }
+          return {
+            history: newHistory,
+            historys: [...state.historys, newHistory],
+          }
+        }
+
+        if (newHistory.messages.length === 0) {
+          return {
+            history: newHistory,
+            historys: state.historys.filter((_, i) => i !== index),
+          }
+        }
+
+        return {
+          history: newHistory,
+          historys: state.historys.map((item, i) => (i === index ? newHistory : item)),
         }
       }),
       historys: [],
-      deleteHistory: (history) => set((state) => ({ historys: state.historys.filter(item => item.id !== history.id) })),
+      deleteHistory: (history) => set((state) => ({
+        history: state.history?.id === history.id ? null : state.history,
+        historys: state.historys.filter(item => item.id !== history.id),
+      })),
       updateHistory: (history) => set((state) => {
-        const id = history.id
-        const index = state.historys.findIndex(item => item.id === id)
+        const index = state.historys.findIndex(item => item.id === history.id)
         if (index === -1) {
           console.error('该历史记录不存在')
           return state
         }
-        state.historys[index] = history
-        return state
+        return {
+          history: state.history?.id === history.id ? history : state.history,
+          historys: state.historys.map((item, i) => (i === index ? history : item)),
+        }
       }),
       queryHistory: (keyword: string) => {
         const { historys } = get()
@@ -60,37 +75,37 @@ export const useHistoryStore = create<HistoryStore>()(
         const timeGroups = [
           {
             label: 'Today',
-            filter: (date: Date) => dayjs(date).isAfter(dayjs().startOf('day'))
+            filter: (date: Date) => dayjs(date).isAfter(dayjs().startOf('day')),
           },
           {
             label: 'Yesterday',
             filter: (date: Date) => dayjs(date).isAfter(dayjs().subtract(1, 'day').startOf('day')) &&
-              dayjs(date).isBefore(dayjs().startOf('day'))
+              dayjs(date).isBefore(dayjs().startOf('day')),
           },
           {
             label: 'This Week',
             filter: (date: Date) => dayjs(date).isAfter(dayjs().startOf('week')) &&
-              dayjs(date).isBefore(dayjs().subtract(1, 'day').startOf('day'))
+              dayjs(date).isBefore(dayjs().subtract(1, 'day').startOf('day')),
           },
           {
             label: 'Last Week',
             filter: (date: Date) => dayjs(date).isAfter(dayjs().subtract(1, 'week').startOf('week')) &&
-              dayjs(date).isBefore(dayjs().startOf('week'))
+              dayjs(date).isBefore(dayjs().startOf('week')),
           },
           {
             label: 'This Month',
             filter: (date: Date) => dayjs(date).isAfter(dayjs().startOf('month')) &&
-              dayjs(date).isBefore(dayjs().startOf('week'))
+              dayjs(date).isBefore(dayjs().startOf('week')),
           },
           {
             label: 'Earlier',
-            filter: (date: Date) => dayjs(date).isBefore(dayjs().startOf('month'))
-          }
+            filter: (date: Date) => dayjs(date).isBefore(dayjs().startOf('month')),
+          },
         ]
 
         const groups = timeGroups.map(group => ({
           label: group.label,
-          items: [] as LLMHistory[]
+          items: [] as LLMHistory[],
         }))
 
         historys.forEach(history => {
@@ -111,5 +126,3 @@ export const useHistoryStore = create<HistoryStore>()(
     }
   )
 )
-
-

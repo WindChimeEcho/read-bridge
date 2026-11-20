@@ -3,9 +3,10 @@ import { EditOutlined, DoubleRightOutlined, StarOutlined, StarFilled } from "@an
 import nlp from "compromise";
 import { useCallback, useMemo, useState, useRef, useEffect } from "react";
 import { useTranslation } from "@/i18n/useTranslation";
-import { useTheme } from "next-themes";
+import { useStyleStore } from "@/store/useStyleStore";
 import { TextAreaRef } from "antd/es/input/TextArea";
 import { useBookmarkStore } from "@/store/useBookmarkStore";
+
 type CurrentSentenceProps = {
   sentence: string;
   handleWord: (word: string) => void;
@@ -18,9 +19,10 @@ type CurrentSentenceProps = {
   } | null;
   onBookmarkToggle: () => void;
 }
+
 export default function CurrentSentence({ sentence, handleWord, onEditComplete, currentBookmarkInfo, onBookmarkToggle }: CurrentSentenceProps) {
   const { t } = useTranslation()
-  const { theme: currentTheme } = useTheme();
+  const { readingTheme } = useStyleStore();
   const [isEditing, setIsEditing] = useState(false);
   const [editText, setEditText] = useState('');
   const inputRef = useRef<TextAreaRef>(null);
@@ -82,7 +84,7 @@ export default function CurrentSentence({ sentence, handleWord, onEditComplete, 
     <div className="w-full h-[136px] p-4 relative">
       <div className="flex items-center justify-between">
         <Tooltip
-          color={currentTheme === 'dark' ? '' : 'white'}
+          color={readingTheme === 'dark' ? undefined : 'white'}
           title={
             <>
               <div className={getChunkColor('Verb')}>{t('sider.verb')}</div>

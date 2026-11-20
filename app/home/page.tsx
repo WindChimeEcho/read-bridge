@@ -1,15 +1,13 @@
 'use client';
 
-import db from '@/services/DB';
-import { useLiveQuery } from 'dexie-react-hooks';
+import { useBookshelf } from '@/hooks/useBook';
 import BookGrid from '@/app/components/BookGrid';
 
-
 export default function Home() {
-  const bookPreviews = useLiveQuery(() => db.getAllBooksPreview(), []) || []
+  const { books } = useBookshelf();
   return (
     <div className='p-2 w-full h-full'>
-      <BookGrid books={bookPreviews} />
+      <BookGrid books={books} />
     </div>
   );
 }

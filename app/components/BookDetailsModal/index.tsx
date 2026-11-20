@@ -1,16 +1,16 @@
 'use client';
 
-import { FC, useState, useEffect, useCallback } from 'react';
-import { Modal, Button, Typography, Divider, Popconfirm, message } from 'antd';
+import { FC, useState, useCallback } from 'react';
+import { Modal, Button, Typography, Divider, Popconfirm } from 'antd';
 import { DeleteOutlined, EditOutlined, InfoCircleOutlined } from '@ant-design/icons';
-import { Book, Resource } from '@/types/book';
-import db from '@/services/DB';
+import { Book } from '@/types/book';
 import { useRouter } from 'next/navigation';
 import { useTranslation } from '@/i18n/useTranslation';
 import BookAddOrEditModal from '../BookAddOrEditModal';
-import { useReadingProgressStore } from '@/store/useReadingProgress';
 import { useBook } from '@/hooks/useBook';
-import { useSiderStore } from '@/store/useSiderStore';
+import { useBookManage } from '@/hooks/useBookManage';
+import { notify } from '@/services/platform/notify';
+import { formatCoverDataUrl } from '@/utils/book';
 
 const { Title, Text } = Typography;
 
@@ -25,62 +25,27 @@ const BookDetailsModal: FC<BookDetailsModalProps> = ({
   onClose,
   bookId,
 }) => {
-  const [book, setBook] = useState<Book | null>(null);
-  const [loading, setLoading] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const router = useRouter();
-  const { readingId, setReadingId } = useSiderStore()
-  const { updateReadingProgress } = useReadingProgressStore()
-  const [, , updateBook] = useBook()
+  const [, , updateBook] = useBook();
   const { t } = useTranslation();
+  const { book, loading, saving, saveBookChanges, deleteBook } = useBookManage(bookId, {
+    enabled: open,
+  });
 
-  // Fetch book details when modal opens
-  useEffect(() => {
-    if (open && bookId) {
-      setLoading(true);
-      db.getBook(bookId)
-        .then(async (fetchedBook) => {
-          setBook(fetchedBook);
-        })
-        .catch((error) => {
-          console.error('Error fetching book:', error);
-          message.error(t('common.templates.loadFailed', { entity: t('common.entities.bookDetails') }));
-        })
-        .finally(() => {
-          setLoading(false);
-        });
-    }
-  }, [open, bookId, t]);
-
-  // Helper function to handle base64 image data
-  const handleBase64 = useCallback((cover: Resource) => {
-    return `data:${cover.mediaType};base64,${cover.data}`;
-  }, []);
+  const isBusy = loading || saving;
 
   const handleDelete = async () => {
-    if (!bookId) return;
-
-    try {
-      setLoading(true);
-      await db.deleteBook(bookId);
-
-      message.success(t('common.templates.deleteSuccess', { entity: t('common.entities.bookGeneric') }));
-      if (bookId === readingId) setReadingId(null)
-      await updateBook()
-      onClose();
-      // Force a refresh of the home page
-      router.refresh();
-    } catch (error) {
-      console.error('Error deleting book:', error);
-      message.error(t('common.templates.deleteFailed', { entity: t('common.entities.bookGeneric') }));
-    } finally {
-      setLoading(false);
-    }
+    const ok = await deleteBook();
+    if (!ok) return;
+    await updateBook();
+    onClose();
+    router.refresh();
   };
 
   const openEditModal = useCallback(() => {
     if (!book) {
-      message.error(t('common.templates.loadFailed', { entity: t('common.entities.bookDetails') }));
+      notify.error(t('common.templates.loadFailed', { entity: t('common.entities.bookDetails') }));
       return;
     }
     setEditModalOpen(true);
@@ -94,41 +59,24 @@ const BookDetailsModal: FC<BookDetailsModalProps> = ({
   }, [book, t]);
 
   const handleEditSubmit = useCallback(async (updatedBook: Book) => {
-    const currentBook = getBookForEdit();
-    if (!currentBook) {
-      message.error(t('common.templates.loadFailed', { entity: t('common.entities.bookDetails') }));
-      return;
-    }
+    const ok = await saveBookChanges(updatedBook);
+    if (!ok) return;
+    setEditModalOpen(false);
+    await updateBook();
+    onClose();
+    router.refresh();
+  }, [onClose, router, saveBookChanges, updateBook]);
 
-    try {
-      setLoading(true);
-      await db.updateBook(bookId, {
-        ...currentBook,
-        ...updatedBook,
-      });
-      // 更新本地数据
-      setBook(prev => prev ? { ...prev, ...updatedBook } : null);
-      setEditModalOpen(false);
-      message.success(t('common.templates.updateSuccess', { entity: t('common.entities.bookGeneric') }));
-      router.refresh();
-    } catch (error) {
-      console.error('Error updating book:', error);
-      message.error(t('common.templates.updateFailed', { entity: t('common.entities.bookGeneric') }));
-    } finally {
-      setLoading(false);
-      if (readingId === bookId) await updateReadingProgress(bookId)
-      await updateBook()
-      onClose();
-    }
-  }, [bookId, router, t, getBookForEdit, onClose, readingId, updateBook, updateReadingProgress]);
+  const coverSrc = formatCoverDataUrl(book?.metadata?.cover);
 
   const renderDetailedView = () => (
     <div className="space-y-4">
       <div className="flex gap-4">
-        {book?.metadata?.cover && (
+        {coverSrc && (
           <div className="w-1/4 aspect-[3/4] overflow-hidden rounded-lg">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src={handleBase64(book.metadata.cover)}
+              src={coverSrc}
               alt={book?.title || t('bookDetails.unknownTitle')}
               className="w-full h-full object-cover"
             />
@@ -162,7 +110,7 @@ const BookDetailsModal: FC<BookDetailsModalProps> = ({
         <Button
           type="primary"
           icon={<EditOutlined />}
-          loading={loading}
+          loading={isBusy}
           onClick={openEditModal}
         >
           {t('bookDetails.editBook')}
@@ -179,7 +127,7 @@ const BookDetailsModal: FC<BookDetailsModalProps> = ({
             type="primary"
             danger
             icon={<DeleteOutlined />}
-            loading={loading}
+            loading={isBusy}
           >
             {t('bookDetails.deleteBook')}
           </Button>

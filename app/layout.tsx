@@ -17,11 +17,17 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning className="h-full overflow-hidden">
+    <html lang="en" suppressHydrationWarning className="h-[100dvh] overflow-hidden">
       <head>
-        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover" />
       </head>
-      <body className={`antialiased h-full`}>
+      <body
+        className="antialiased h-[100dvh] overflow-hidden"
+        style={{
+          backgroundColor: 'var(--rb-bg-canvas)',
+          color: 'var(--rb-text-primary)',
+        }}
+      >
         <ThemeProvider>
           <AntdRegistry>
             <StructureLayout>

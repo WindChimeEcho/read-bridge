@@ -5,8 +5,8 @@ import { useReaderSessionStore } from '@/store/useReaderSessionStore'
 import { useSiderStore } from '@/store/useSiderStore'
 import { usePathname } from 'next/navigation'
 import React, { useEffect } from 'react'
-import SiderContent from '@/app/components/sider/components/SiderContent'
-import SiderChat from '@/app/components/sider/components/SiderChat'
+import SiderContent from '@/app/_views/desktop/sider/components/SiderContent'
+import SiderChat from '@/app/_views/desktop/sider/components/SiderChat'
 
 export default function Sider() {
   const { readingId, setSiderCollapsed } = useSiderStore()

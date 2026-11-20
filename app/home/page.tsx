@@ -1,13 +1,13 @@
-'use client';
+'use client'
 
-import { useBookshelf } from '@/hooks/useBook';
-import BookGrid from '@/app/components/BookGrid';
+import DesktopHome from '@/app/_views/desktop/DesktopHome'
+import MobileBookshelf from '@/app/_views/mobile/bookshelf/MobileBookshelf'
+import { useViewportMode } from '@/hooks/useViewportMode'
 
-export default function Home() {
-  const { books } = useBookshelf();
-  return (
-    <div className='p-2 w-full h-full'>
-      <BookGrid books={books} />
-    </div>
-  );
+export default function HomePage() {
+  const { mode, mounted } = useViewportMode()
+
+  if (!mounted) return null
+
+  return mode === 'mobile' ? <MobileBookshelf /> : <DesktopHome />
 }

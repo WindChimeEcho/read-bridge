@@ -150,14 +150,18 @@ export function useReadArea(book: Book, readingProgress: ReadingProgress) {
     await updateReadingProgress(book.id)
   }, [book.id, chapterIndex, lines, selectSentence, updateReadingProgress])
 
-  const scrollLineIntoSafeArea = useCallback((lineIndex: number, bottomObstructionPx: number) => {
+  const scrollLineIntoSafeArea = useCallback((
+    lineIndex: number,
+    bottomObstructionPx: number,
+    topInsetPx = 16
+  ) => {
     const container = containerRef.current
     const element = lineRefsMap.current.get(lineIndex)
     if (!container || !element) return
 
     const containerRect = container.getBoundingClientRect()
     const elRect = element.getBoundingClientRect()
-    const safeTop = containerRect.top + 16
+    const safeTop = containerRect.top + topInsetPx
     const safeBottom = Math.max(safeTop + 60, containerRect.bottom - bottomObstructionPx - 16)
 
     if (elRect.top < safeTop || elRect.bottom > safeBottom) {

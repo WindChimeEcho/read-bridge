@@ -30,7 +30,7 @@ export default function BackupDataSubpage({ onBack }: { onBack: () => void }) {
     <div className="h-full w-full flex flex-col bg-[var(--rb-bg-canvas)] text-[var(--rb-text-primary)]">
       <SubpageHeader title={t('mobileSettings.backupData')} onBack={onBack} />
 
-      <div className="flex-1 min-h-0 overflow-y-auto px-4 py-4 pb-safe space-y-4">
+      <div className="flex-1 min-h-0 overflow-y-auto px-4 pt-4 pb-safe-4 space-y-4">
         <SectionCard className="space-y-3">
           <div className="text-sm font-semibold">{t('backup.title')}</div>
           <p className="text-xs leading-relaxed text-[var(--rb-text-secondary)]">

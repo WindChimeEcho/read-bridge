@@ -219,7 +219,7 @@ export default function MobileTocDrawer({
           )}
         </div>
 
-        <div className="shrink-0 border-t border-[var(--rb-border)] p-4 pb-safe space-y-3 bg-[var(--rb-bg-chrome)]">
+        <div className="shrink-0 border-t border-[var(--rb-border)] px-4 pt-4 pb-safe-4 space-y-3 bg-[var(--rb-bg-chrome)]">
           {fontPreviewVisible && (
             <div className="rounded-xl border border-[var(--rb-border)] bg-[var(--rb-bg-surface)] px-3 py-2 flex items-baseline justify-between gap-2">
               <span className={`rb-serif truncate ${PREVIEW_SIZE_CLASS[fontSize]}`}>

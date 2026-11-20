@@ -191,6 +191,12 @@ describe('store immutability, reordering, and notify adapter', () => {
     expect(warnings).toContain('至少保留一个提示词')
   })
 
+  it('initializes useOutputOptions with selectedId matching an existing promptOptions item', () => {
+    const { promptOptions, selectedId } = useOutputOptions.getState()
+    expect(promptOptions.length).toBeGreaterThan(0)
+    expect(promptOptions.some(opt => opt.id === selectedId)).toBe(true)
+  })
+
   it('keeps useHistoryStore immutable and avoids writing historys[-1] on empty new chat', () => {
     useHistoryStore.setState({ history: null, historys: [] })
 

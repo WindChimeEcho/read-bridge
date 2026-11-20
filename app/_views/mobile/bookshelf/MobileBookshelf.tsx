@@ -115,7 +115,7 @@ export default function MobileBookshelf() {
         </div>
       </header>
 
-      <div className="flex-1 min-h-0 overflow-y-auto px-4 py-4 pb-safe">
+      <div className="flex-1 min-h-0 overflow-y-auto px-4 pt-4 pb-safe-4">
         {recentReading && (
           <div
             onClick={() => openReader(recentReading.bookId)}

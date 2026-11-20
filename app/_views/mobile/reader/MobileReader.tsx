@@ -122,7 +122,6 @@ function MobileReaderContent({
   const { t } = useTranslation()
   const fontSize = useStyleStore(state => state.fontSize)
   const activeSheet = useReaderSessionStore(state => state.activeSheet)
-  const sheetDetent = useReaderSessionStore(state => state.sheetDetent)
   const openTocDrawer = useReaderSessionStore(state => state.openTocDrawer)
   const openChatSheet = useReaderSessionStore(state => state.openChatSheet)
 
@@ -164,14 +163,13 @@ function MobileReaderContent({
 
   useEffect(() => {
     if (activeSheet !== 'analysis' || selectedLineIndex === null) return
-    const ratio = sheetDetent === 'expanded' ? 0.88 : 0.55
     const topInsetPx = headerVisibleRef.current ? 64 : 20
     const timer = setTimeout(() => {
-      const obstructionPx = Math.round(window.innerHeight * ratio)
+      const obstructionPx = Math.round(window.innerHeight * 0.88)
       scrollLineIntoSafeArea(selectedLineIndex, obstructionPx, topInsetPx)
     }, 80)
     return () => clearTimeout(timer)
-  }, [activeSheet, selectedLineIndex, sheetDetent, scrollLineIntoSafeArea])
+  }, [activeSheet, selectedLineIndex, scrollLineIntoSafeArea])
 
   const handleScroll = () => {
     const container = containerRef.current
@@ -189,9 +187,7 @@ function MobileReaderContent({
     }
   }
 
-  const bottomPaddingClass = activeSheet === 'analysis'
-    ? (sheetDetent === 'expanded' ? 'pb-[90dvh]' : 'pb-[62dvh]')
-    : 'pb-16'
+  const bottomPaddingClass = activeSheet === 'analysis' ? 'pb-[90dvh]' : 'pb-16'
 
   return (
     <div className="h-full w-full relative flex flex-col bg-[var(--rb-bg-canvas)] text-[var(--rb-text-primary)]">

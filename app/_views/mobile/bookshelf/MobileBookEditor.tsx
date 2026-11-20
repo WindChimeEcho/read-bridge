@@ -26,6 +26,7 @@ import { fileAdapter } from '@/services/platform/fileAdapter'
 import { notify } from '@/services/platform/notify'
 import type { Book } from '@/types/book'
 import MobileCoverImage from '../components/MobileCoverImage'
+import MobileSelect from '../components/MobileSelect'
 
 interface MobileBookEditorProps {
   bookId: string
@@ -181,7 +182,7 @@ export default function MobileBookEditor({ bookId, onClose }: MobileBookEditorPr
         </div>
       </header>
 
-      <div className="flex-1 min-h-0 overflow-y-auto px-4 py-4 pb-safe space-y-5">
+      <div className="flex-1 min-h-0 overflow-y-auto px-4 pt-4 pb-safe-4 space-y-5">
         {loading || !draft ? (
           <div className="py-16 flex items-center justify-center text-[var(--rb-text-secondary)]">
             <LoadingOutlined className="text-2xl" />
@@ -249,26 +250,22 @@ export default function MobileBookEditor({ bookId, onClose }: MobileBookEditorPr
                 <label className="block text-xs font-medium text-[var(--rb-text-secondary)] mb-1">
                   {t('book.language')}
                 </label>
-                <select
+                <MobileSelect
+                  variant="field"
+                  surface="canvas"
+                  title={t('book.language')}
                   value={draft.metadata.language || 'en'}
-                  onChange={e => {
-                    const language = e.target.value
+                  onChange={language => {
                     setDraft(prev => prev ? {
                       ...prev,
                       metadata: { ...prev.metadata, language },
                     } : prev)
                   }}
-                  className="w-full h-10 px-3 rounded-xl border border-[var(--rb-border)] bg-[var(--rb-bg-canvas)] text-sm outline-none focus:border-[var(--rb-accent)]"
-                >
-                  {COMMON_LANGUAGES.map(lang => (
-                    <option key={lang.code} value={lang.code}>
-                      {lang.name}
-                    </option>
-                  ))}
-                  {!COMMON_LANGUAGES.some(lang => lang.code === draft.metadata.language) && draft.metadata.language && (
-                    <option value={draft.metadata.language}>{draft.metadata.language}</option>
-                  )}
-                </select>
+                  options={COMMON_LANGUAGES.map(lang => ({
+                    value: lang.code,
+                    label: lang.name,
+                  }))}
+                />
               </div>
 
               <div>
@@ -405,7 +402,7 @@ export default function MobileBookEditor({ bookId, onClose }: MobileBookEditorPr
             </div>
           </header>
 
-          <div className="flex-1 min-h-0 flex flex-col p-4 pb-safe gap-3">
+          <div className="flex-1 min-h-0 flex flex-col px-4 pt-4 pb-safe-4 gap-3">
             <div>
               <label className="block text-xs font-medium text-[var(--rb-text-secondary)] mb-1">
                 {t('mobile.chapterTitle')}

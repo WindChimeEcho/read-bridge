@@ -17,6 +17,7 @@ import { notify } from '@/services/platform/notify'
 import { useOutputOptions } from '@/store/useOutputOptions'
 import type { OutputOption } from '@/types/llm'
 import type { OutputType } from '@/types/prompt'
+import MobileSelect from '../components/MobileSelect'
 import { SectionCard, SubpageHeader } from './SettingsPrimitives'
 
 export default function SentenceRulesSubpage({ onBack }: { onBack: () => void }) {
@@ -136,7 +137,7 @@ export default function SentenceRulesSubpage({ onBack }: { onBack: () => void })
         }
       />
 
-      <div className="flex-1 min-h-0 overflow-y-auto px-4 py-4 pb-safe space-y-4">
+      <div className="flex-1 min-h-0 overflow-y-auto px-4 pt-4 pb-safe-4 space-y-4">
         <SectionCard className="space-y-2.5">
           <div>
             <div className="text-sm font-semibold">{t('mobileSettings.batchSize')}</div>
@@ -280,7 +281,7 @@ export default function SentenceRulesSubpage({ onBack }: { onBack: () => void })
               </button>
             }
           />
-          <div className="flex-1 min-h-0 flex flex-col p-4 pb-safe gap-3">
+          <div className="flex-1 min-h-0 flex flex-col px-4 pt-4 pb-safe-4 gap-3">
             <div>
               <label className="block text-xs font-medium text-[var(--rb-text-secondary)] mb-1">
                 {t('settings.sentenceConfigName')}
@@ -297,17 +298,17 @@ export default function SentenceRulesSubpage({ onBack }: { onBack: () => void })
               <label className="block text-xs font-medium text-[var(--rb-text-secondary)] mb-1">
                 {t('settings.sentenceType')}
               </label>
-              <select
+              <MobileSelect
+                variant="field"
+                surface="surface"
+                title={t('settings.sentenceType')}
                 value={typeInput}
-                onChange={e => setTypeInput(e.target.value as OutputType)}
-                className="w-full h-10 px-3 rounded-xl border border-[var(--rb-border)] bg-[var(--rb-bg-surface)] text-sm outline-none focus:border-[var(--rb-accent)]"
-              >
-                {Object.values(OUTPUT_TYPE).map(typeValue => (
-                  <option key={typeValue} value={typeValue}>
-                    {typeLabelMap[typeValue]}
-                  </option>
-                ))}
-              </select>
+                onChange={value => setTypeInput(value as OutputType)}
+                options={Object.values(OUTPUT_TYPE).map(typeValue => ({
+                  value: typeValue,
+                  label: typeLabelMap[typeValue],
+                }))}
+              />
             </div>
 
             <div className="flex-1 min-h-0 flex flex-col">

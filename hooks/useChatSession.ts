@@ -28,7 +28,13 @@ export function useChatSession() {
   const chatQuotedSentence = useReaderSessionStore(state => state.chatQuotedSentence)
   const clearChatQuote = useReaderSessionStore(state => state.clearChatQuote)
 
-  const [history, setHistory] = useState<LLMHistory>(() => getNewHistory(promptOptions, selectedId))
+  const effectiveSelectedPromptId = useMemo(() => (
+    promptOptions.some(option => option.id === selectedId)
+      ? selectedId
+      : (promptOptions[0]?.id ?? '')
+  ), [promptOptions, selectedId])
+
+  const [history, setHistory] = useState<LLMHistory>(() => getNewHistory(promptOptions, effectiveSelectedPromptId))
   const [isGenerating, setIsGenerating] = useState(false)
 
   const historyRef = useRef(history)
@@ -232,10 +238,10 @@ export function useChatSession() {
     abortControllerRef.current?.abort()
     generationIdRef.current += 1
     setIsGenerating(false)
-    const fresh = getNewHistory(promptOptions, selectedId)
+    const fresh = getNewHistory(promptOptions, effectiveSelectedPromptId)
     setHistory(fresh)
     setStoreHistory(null)
-  }, [promptOptions, selectedId, setStoreHistory])
+  }, [promptOptions, effectiveSelectedPromptId, setStoreHistory])
 
   const selectHistory = useCallback((id: string) => {
     const selectedHistory = historys.find(item => item.id === id)
@@ -253,11 +259,11 @@ export function useChatSession() {
       abortControllerRef.current?.abort()
       generationIdRef.current += 1
       setIsGenerating(false)
-      const fresh = getNewHistory(promptOptions, selectedId)
+      const fresh = getNewHistory(promptOptions, effectiveSelectedPromptId)
       setHistory(fresh)
       setStoreHistory(null)
     }
-  }, [deleteStoreHistory, promptOptions, selectedId, setStoreHistory])
+  }, [deleteStoreHistory, promptOptions, effectiveSelectedPromptId, setStoreHistory])
 
   const renameHistory = useCallback((item: LLMHistory, title: string) => {
     const updated = { ...item, title }
@@ -280,7 +286,7 @@ export function useChatSession() {
     historyList: historys,
     groupedHistory: groupHistoryByTime(),
     isGenerating,
-    selectedPromptId: selectedId,
+    selectedPromptId: effectiveSelectedPromptId,
     promptOptions,
     tagOptions,
     quotedSentence: chatQuotedSentence,

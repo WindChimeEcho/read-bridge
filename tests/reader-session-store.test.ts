@@ -22,15 +22,11 @@ describe('useReaderSessionStore', () => {
     expect(state.selectionSeq).toBe(1)
     expect(state.activeSheet).toBe('analysis')
     expect(state.analysisTab).toBe('sentence')
-    expect(state.sheetDetent).toBe('peek')
 
     store.selectWordInSentence('Hello')
     state = useReaderSessionStore.getState()
     expect(state.selectedWord).toBe('Hello')
     expect(state.analysisTab).toBe('word')
-
-    store.setSheetDetent('expanded')
-    expect(useReaderSessionStore.getState().sheetDetent).toBe('expanded')
 
     store.openChatSheet('Hello world.')
     state = useReaderSessionStore.getState()

@@ -299,7 +299,8 @@
     "changeCover": "Change Cover",
     "dragToReorder": "Drag handle on right to reorder",
     "saveSuccess": "Changes saved",
-    "deleteSuccess": "Book deleted"
+    "deleteSuccess": "Book deleted",
+    "selectPrompt": "Select Chat Prompt"
   },
   "mobileSettings": {
     "groupAi": "AI & Models",

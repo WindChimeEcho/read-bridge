@@ -7,6 +7,7 @@ import { getSystemTTSDriver } from '@/services/platform/ttsAdapter'
 import { useTTSStore } from '@/store/useTTSStore'
 import type { Voice } from '@/types/tts'
 import { getRuntimePlatform } from '@/utils/platform'
+import MobileSelect, { type MobileSelectGroup } from '../components/MobileSelect'
 import { SectionCard, SubpageHeader, ToggleSwitch } from './SettingsPrimitives'
 
 const SAMPLE_TEXT_BY_LANG: Record<string, string> = {
@@ -64,6 +65,16 @@ export default function TTSSubpage({ onBack }: { onBack: () => void }) {
     return [...priority, ...others]
   }, [voices])
 
+  const voiceGroups = useMemo<MobileSelectGroup[]>(() => (
+    groupedVoices.map(group => ({
+      label: group.lang,
+      options: group.items.map(voice => ({
+        value: voice.name,
+        label: voice.name,
+      })),
+    }))
+  ), [groupedVoices])
+
   const systemConfig = ttsConfig.system
 
   const handleTestSpeech = () => {
@@ -81,7 +92,7 @@ export default function TTSSubpage({ onBack }: { onBack: () => void }) {
     <div className="h-full w-full flex flex-col bg-[var(--rb-bg-canvas)] text-[var(--rb-text-primary)]">
       <SubpageHeader title={t('mobileSettings.ttsSettings')} onBack={onBack} />
 
-      <div className="flex-1 min-h-0 overflow-y-auto px-4 py-4 pb-safe space-y-4">
+      <div className="flex-1 min-h-0 overflow-y-auto px-4 pt-4 pb-safe-4 space-y-4">
         <div
           className={`rounded-2xl border px-3.5 py-3 text-xs leading-relaxed ${
             available
@@ -125,29 +136,20 @@ export default function TTSSubpage({ onBack }: { onBack: () => void }) {
             <label className="block text-xs font-medium text-[var(--rb-text-secondary)] mb-1">
               {t('settings.ttsVoice')}
             </label>
-            <select
+            <MobileSelect
+              variant="field"
+              surface="canvas"
+              title={t('settings.ttsVoice')}
+              placeholder={t('settings.ttsVoice')}
               value={systemConfig.voiceType}
-              onChange={e =>
+              onChange={voiceType =>
                 setTTSConfig('system', {
                   ...systemConfig,
-                  voiceType: e.target.value,
+                  voiceType,
                 })
               }
-              className="w-full h-10 px-3 rounded-xl border border-[var(--rb-border)] bg-[var(--rb-bg-canvas)] text-sm outline-none focus:border-[var(--rb-accent)]"
-            >
-              {systemConfig.voiceType && !voices.some(v => v.name === systemConfig.voiceType) && (
-                <option value={systemConfig.voiceType}>{systemConfig.voiceType}</option>
-              )}
-              {groupedVoices.map(group => (
-                <optgroup key={group.lang} label={group.lang}>
-                  {group.items.map(voice => (
-                    <option key={`${group.lang}-${voice.name}`} value={voice.name}>
-                      {voice.name}
-                    </option>
-                  ))}
-                </optgroup>
-              ))}
-            </select>
+              groups={voiceGroups}
+            />
           </div>
 
           <div>

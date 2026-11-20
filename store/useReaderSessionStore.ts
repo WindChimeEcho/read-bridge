@@ -2,7 +2,6 @@ import { create } from 'zustand'
 
 export type MobileSheetType = 'none' | 'analysis' | 'chat'
 export type AnalysisSheetTab = 'sentence' | 'word'
-export type SheetDetent = 'peek' | 'expanded'
 
 const DEFAULT_FONT_PREVIEW_DURATION_MS = 2800
 
@@ -17,7 +16,6 @@ export interface ReaderSessionState {
   tocDrawerTab: 'toc' | 'bookmark'
   activeSheet: MobileSheetType
   analysisTab: AnalysisSheetTab
-  sheetDetent: SheetDetent
 
   chatQuotedSentence: string | null
 
@@ -33,7 +31,6 @@ export interface ReaderSessionState {
   openChatSheet: (quotedSentence?: string | null) => void
   clearChatQuote: () => void
   closeActiveSheet: () => void
-  setSheetDetent: (detent: SheetDetent) => void
   setAnalysisTab: (tab: AnalysisSheetTab) => void
   triggerFontPreview: (durationMs?: number) => void
   hideFontPreview: () => void
@@ -57,7 +54,6 @@ export const useReaderSessionStore = create<ReaderSessionState>((set, get) => ({
   tocDrawerTab: 'toc',
   activeSheet: 'none',
   analysisTab: 'sentence',
-  sheetDetent: 'peek',
 
   chatQuotedSentence: null,
 
@@ -71,7 +67,6 @@ export const useReaderSessionStore = create<ReaderSessionState>((set, get) => ({
     selectionSeq: state.selectionSeq + 1,
     activeSheet: openSheet ? 'analysis' : state.activeSheet,
     analysisTab: 'sentence',
-    sheetDetent: openSheet ? 'peek' : state.sheetDetent,
   })),
 
   selectWordInSentence: (word) => set({
@@ -119,10 +114,6 @@ export const useReaderSessionStore = create<ReaderSessionState>((set, get) => ({
     activeSheet: 'none',
   }),
 
-  setSheetDetent: (detent) => set({
-    sheetDetent: detent,
-  }),
-
   setAnalysisTab: (tab) => set({
     analysisTab: tab,
   }),
@@ -161,7 +152,6 @@ export const useReaderSessionStore = create<ReaderSessionState>((set, get) => ({
       tocDrawerTab: 'toc',
       activeSheet: 'none',
       analysisTab: 'sentence',
-      sheetDetent: 'peek',
       chatQuotedSentence: null,
       fontPreviewVisible: false,
       fontPreviewTimerId: null,

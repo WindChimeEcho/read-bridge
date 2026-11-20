@@ -4,6 +4,7 @@ import { useEffect, useMemo } from 'react'
 import { useTranslation } from '@/i18n/useTranslation'
 import { useLLMStore } from '@/store/useLLMStore'
 import type { ReasoningEffort, ThinkingConfig, ThinkingMode } from '@/types/llm'
+import MobileSelect, { type MobileSelectGroup } from '../components/MobileSelect'
 import { SectionCard, SubpageHeader } from './SettingsPrimitives'
 
 export default function DefaultModelSubpage({ onBack }: { onBack: () => void }) {
@@ -31,6 +32,17 @@ export default function DefaultModelSubpage({ onBack }: { onBack: () => void }) 
     () => configuredProviders.flatMap(provider => provider.models),
     [configuredProviders]
   )
+
+  const modelGroups = useMemo<MobileSelectGroup[]>(() => (
+    configuredProviders.map(provider => ({
+      label: provider.name,
+      options: provider.models.map(model => ({
+        value: `${provider.id}:${model.id}`,
+        label: model.name,
+        description: model.id !== model.name ? model.id : undefined,
+      })),
+    }))
+  ), [configuredProviders])
 
   const hasModels = availableModels.length > 0
 
@@ -115,7 +127,7 @@ export default function DefaultModelSubpage({ onBack }: { onBack: () => void }) 
     <div className="h-full w-full flex flex-col bg-[var(--rb-bg-canvas)] text-[var(--rb-text-primary)]">
       <SubpageHeader title={t('mobileSettings.defaultModels')} onBack={onBack} />
 
-      <div className="flex-1 min-h-0 overflow-y-auto px-4 py-4 pb-safe space-y-4">
+      <div className="flex-1 min-h-0 overflow-y-auto px-4 pt-4 pb-safe-4 space-y-4">
         {!hasModels ? (
           <SectionCard>
             <p className="text-sm text-[var(--rb-text-secondary)] leading-relaxed">
@@ -132,10 +144,14 @@ export default function DefaultModelSubpage({ onBack }: { onBack: () => void }) 
                 </p>
               </div>
 
-              <select
+              <MobileSelect
+                variant="field"
+                surface="canvas"
+                title={t('settings.analyticalModel')}
+                placeholder={t('settings.selectAnalyticalModel')}
+                clearLabel={t('mobileSettings.clearSelection')}
                 value={parseModel ? `${parseModel.providerId}:${parseModel.id}` : ''}
-                onChange={e => {
-                  const raw = e.target.value
+                onChange={raw => {
                   if (!raw) {
                     setParseModel(null)
                     return
@@ -143,22 +159,8 @@ export default function DefaultModelSubpage({ onBack }: { onBack: () => void }) 
                   const found = availableModels.find(m => `${m.providerId}:${m.id}` === raw)
                   if (found) setParseModel(found)
                 }}
-                className="w-full h-10 px-3 rounded-xl border border-[var(--rb-border)] bg-[var(--rb-bg-canvas)] text-sm outline-none focus:border-[var(--rb-accent)]"
-              >
-                <option value="">{t('mobileSettings.clearSelection')}</option>
-                {configuredProviders.map(provider => (
-                  <optgroup key={provider.id} label={provider.name}>
-                    {provider.models.map(model => (
-                      <option
-                        key={`${provider.id}:${model.id}`}
-                        value={`${provider.id}:${model.id}`}
-                      >
-                        {model.name} ({model.id})
-                      </option>
-                    ))}
-                  </optgroup>
-                ))}
-              </select>
+                groups={modelGroups}
+              />
 
               {renderThinkingControls(parseThinking, setParseThinking)}
             </SectionCard>
@@ -171,10 +173,14 @@ export default function DefaultModelSubpage({ onBack }: { onBack: () => void }) 
                 </p>
               </div>
 
-              <select
+              <MobileSelect
+                variant="field"
+                surface="canvas"
+                title={t('settings.chatModel')}
+                placeholder={t('settings.selectChatModel')}
+                clearLabel={t('mobileSettings.clearSelection')}
                 value={chatModel ? `${chatModel.providerId}:${chatModel.id}` : ''}
-                onChange={e => {
-                  const raw = e.target.value
+                onChange={raw => {
                   if (!raw) {
                     setChatModel(null)
                     return
@@ -182,22 +188,8 @@ export default function DefaultModelSubpage({ onBack }: { onBack: () => void }) 
                   const found = availableModels.find(m => `${m.providerId}:${m.id}` === raw)
                   if (found) setChatModel(found)
                 }}
-                className="w-full h-10 px-3 rounded-xl border border-[var(--rb-border)] bg-[var(--rb-bg-canvas)] text-sm outline-none focus:border-[var(--rb-accent)]"
-              >
-                <option value="">{t('mobileSettings.clearSelection')}</option>
-                {configuredProviders.map(provider => (
-                  <optgroup key={provider.id} label={provider.name}>
-                    {provider.models.map(model => (
-                      <option
-                        key={`${provider.id}:${model.id}`}
-                        value={`${provider.id}:${model.id}`}
-                      >
-                        {model.name} ({model.id})
-                      </option>
-                    ))}
-                  </optgroup>
-                ))}
-              </select>
+                groups={modelGroups}
+              />
 
               {renderThinkingControls(chatThinking, setChatThinking)}
             </SectionCard>

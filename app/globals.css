@@ -71,6 +71,22 @@
   padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
+.pb-safe-2\.5 {
+  padding-bottom: calc(0.625rem + env(safe-area-inset-bottom, 0px));
+}
+
+.pb-safe-3 {
+  padding-bottom: calc(0.75rem + env(safe-area-inset-bottom, 0px));
+}
+
+.pb-safe-4 {
+  padding-bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
+}
+
+.pb-safe-6 {
+  padding-bottom: calc(1.5rem + env(safe-area-inset-bottom, 0px));
+}
+
 .no-callout {
   -webkit-touch-callout: none;
   -webkit-user-select: none;

@@ -300,7 +300,8 @@
     "changeCover": "更换封面",
     "dragToReorder": "按住右侧手柄拖拽排序",
     "saveSuccess": "已保存修改",
-    "deleteSuccess": "已删除书籍"
+    "deleteSuccess": "已删除书籍",
+    "selectPrompt": "选择对话提示词"
   },
   "mobileSettings": {
     "groupAi": "AI 与模型",

@@ -115,7 +115,7 @@ export default function WordRulesSubpage({ onBack }: { onBack: () => void }) {
         }
       />
 
-      <div className="flex-1 min-h-0 overflow-y-auto px-4 py-4 pb-safe space-y-4">
+      <div className="flex-1 min-h-0 overflow-y-auto px-4 pt-4 pb-safe-4 space-y-4">
         <p className="text-xs text-[var(--rb-text-secondary)] px-1">
           {t('mobile.dragToReorder')}
         </p>
@@ -244,7 +244,7 @@ export default function WordRulesSubpage({ onBack }: { onBack: () => void }) {
               </button>
             }
           />
-          <div className="flex-1 min-h-0 flex flex-col p-4 pb-safe gap-3">
+          <div className="flex-1 min-h-0 flex flex-col px-4 pt-4 pb-safe-4 gap-3">
             <div>
               <label className="block text-xs font-medium text-[var(--rb-text-secondary)] mb-1">
                 {t('settings.wordConfigName')}

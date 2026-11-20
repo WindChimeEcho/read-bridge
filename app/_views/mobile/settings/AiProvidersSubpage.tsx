@@ -17,6 +17,7 @@ import { registerBackHandler } from '@/services/platform/backAdapter'
 import { notify } from '@/services/platform/notify'
 import { useLLMStore } from '@/store/useLLMStore'
 import type { Model, Provider, ProviderProtocol } from '@/types/llm'
+import MobileSelect from '../components/MobileSelect'
 import { SectionCard, SubpageHeader, ToggleSwitch } from './SettingsPrimitives'
 
 export default function AiProvidersSubpage({ onBack }: { onBack: () => void }) {
@@ -261,7 +262,7 @@ export default function AiProvidersSubpage({ onBack }: { onBack: () => void }) {
       </div>
 
       {activeProvider && (
-        <div className="flex-1 min-h-0 overflow-y-auto px-4 py-4 pb-safe space-y-4">
+        <div className="flex-1 min-h-0 overflow-y-auto px-4 pt-4 pb-safe-4 space-y-4">
           <SectionCard className="space-y-3.5">
             <div className="flex items-center justify-between gap-2">
               <h2 className="text-sm font-semibold truncate">{activeProvider.name}</h2>
@@ -301,18 +302,21 @@ export default function AiProvidersSubpage({ onBack }: { onBack: () => void }) {
               <label className="block text-xs font-medium text-[var(--rb-text-secondary)] mb-1">
                 {t('settings.providerProtocol')}
               </label>
-              <select
+              <MobileSelect
+                variant="field"
+                surface="canvas"
+                title={t('settings.providerProtocol')}
                 value={effectiveProtocol}
-                onChange={e =>
-                  updateActiveProvider({ protocol: e.target.value as ProviderProtocol })
+                onChange={value =>
+                  updateActiveProvider({ protocol: value as ProviderProtocol })
                 }
-                className="w-full h-10 px-3 rounded-xl border border-[var(--rb-border)] bg-[var(--rb-bg-canvas)] text-sm outline-none focus:border-[var(--rb-accent)]"
-              >
-                <option value="openai">OpenAI</option>
-                <option value="anthropic">Anthropic</option>
-                <option value="google">Google Gemini</option>
-                <option value="openai-compatible">{t('settings.openAICompatible')}</option>
-              </select>
+                options={[
+                  { value: 'openai', label: 'OpenAI' },
+                  { value: 'anthropic', label: 'Anthropic' },
+                  { value: 'google', label: 'Google Gemini' },
+                  { value: 'openai-compatible', label: t('settings.openAICompatible') },
+                ]}
+              />
             </div>
 
             {effectiveProtocol === 'openai-compatible' && (
@@ -512,7 +516,7 @@ export default function AiProvidersSubpage({ onBack }: { onBack: () => void }) {
             </div>
           </div>
 
-          <div className="flex-1 min-h-0 overflow-y-auto p-3 pb-safe space-y-1.5">
+          <div className="flex-1 min-h-0 overflow-y-auto px-3 pt-3 pb-safe-3 space-y-1.5">
             {filteredRemoteModels.map(item => {
               const checked = selectedImportIds.includes(item.id)
               return (

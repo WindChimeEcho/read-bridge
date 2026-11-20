@@ -94,8 +94,10 @@ interface OutputOptionsStore {
 
 export const useOutputOptions = create<OutputOptionsStore>()(
   persist(
-    (set) => ({
-      sentenceOptions: defaultSentenceOutputOption(),
+    (set) => {
+      const initialPromptOptions = defaultPromptOutputOption()
+      return {
+        sentenceOptions: defaultSentenceOutputOption(),
       addSentenceOptions: (newOption) => set((state) => ({
         sentenceOptions: [...state.sentenceOptions, {
           ...newOption,
@@ -119,7 +121,7 @@ export const useOutputOptions = create<OutputOptionsStore>()(
       batchProcessingSize: 1,
       setBatchProcessingSize: (size) => set({ batchProcessingSize: size }),
 
-      promptOptions: defaultPromptOutputOption(),
+      promptOptions: initialPromptOptions,
       addPromptOptions: (newPrompt) => set((state) => ({
         promptOptions: [...state.promptOptions, {
           ...newPrompt,
@@ -156,7 +158,7 @@ export const useOutputOptions = create<OutputOptionsStore>()(
           selectedId: next[0].id,
         }
       }),
-      selectedId: defaultPromptOutputOption()[0].id,
+      selectedId: initialPromptOptions[0]?.id ?? '',
       setSelectedId: (id) => set({ selectedId: id }),
 
       wordOptions: defaultWordOutputOption(),
@@ -197,11 +199,24 @@ export const useOutputOptions = create<OutputOptionsStore>()(
       }),
       selectedWordId: '',
       setSelectedWordId: (id) => set({ selectedWordId: id }),
-    }),
+      }
+    },
     {
       name: 'output-options-storage',
       onRehydrateStorage: () => (state) => {
-        if (state && (!state.selectedWordId || state.selectedWordId === '') && state.wordOptions && state.wordOptions.length > 0) {
+        if (!state) return
+        if (
+          state.promptOptions &&
+          state.promptOptions.length > 0 &&
+          (!state.selectedId || !state.promptOptions.some(option => option.id === state.selectedId))
+        ) {
+          state.selectedId = state.promptOptions[0].id
+        }
+        if (
+          state.wordOptions &&
+          state.wordOptions.length > 0 &&
+          (!state.selectedWordId || !state.wordOptions.some(option => option.id === state.selectedWordId))
+        ) {
           state.selectedWordId = state.wordOptions[0].id
         }
       },

@@ -9,28 +9,16 @@ function defaultSentenceOutputOption(): OutputOption[] {
   return [
     {
       id: generateUUID(),
-      name: 'Sentence Analysis',
-      type: OUTPUT_TYPE.SIMPLE_LIST,
-      rulePrompt: INPUT_PROMPT.SENTENCE_STRUCTURE_ANALYSIS,
-    },
-    {
-      id: generateUUID(),
-      name: 'Sentence Rewrite',
-      type: OUTPUT_TYPE.TEXT,
-      rulePrompt: INPUT_PROMPT.SENTENCE_REWRITE,
-    },
-    {
-      id: generateUUID(),
-      name: 'Key Word Analysis',
-      type: OUTPUT_TYPE.KEY_VALUE_LIST,
-      rulePrompt: INPUT_PROMPT.EXTRACT_KEY_WORDS,
-    },
-    {
-      id: generateUUID(),
-      name: 'Sentence Simplification',
+      name: 'Smart Breakdown',
       type: OUTPUT_TYPE.MD,
-      rulePrompt: INPUT_PROMPT.MD_SENTENCE_SIMPLIFICATION,
-    }
+      rulePrompt: INPUT_PROMPT.SENTENCE_SMART_BREAKDOWN,
+    },
+    {
+      id: generateUUID(),
+      name: 'Expressions & Vibe',
+      type: OUTPUT_TYPE.MD,
+      rulePrompt: INPUT_PROMPT.SENTENCE_EXPRESSIONS_VIBE,
+    },
   ]
 }
 
@@ -38,13 +26,13 @@ function defaultWordOutputOption(): WordOption[] {
   return [
     {
       id: generateUUID(),
-      name: '单词基础分析',
-      rulePrompt: INPUT_PROMPT.WORD_DETAILS,
+      name: '语境快查 (短语感知)',
+      rulePrompt: INPUT_PROMPT.WORD_QUICK_LOOK,
     },
     {
       id: generateUUID(),
-      name: '单词详细分析',
-      rulePrompt: INPUT_PROMPT.FUNC_WORD_DETAILS,
+      name: '核心画面与多义',
+      rulePrompt: INPUT_PROMPT.WORD_DEEP_PICTURE,
     }
   ]
 }

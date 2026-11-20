@@ -53,7 +53,7 @@ export default function SiderContent() {
     wordOptions.find(option => option.id === selectedWordId) ?? wordOptions[0] ?? {
       id: 'default-word-details',
       name: 'default',
-      rulePrompt: INPUT_PROMPT.FUNC_WORD_DETAILS,
+      rulePrompt: INPUT_PROMPT.WORD_QUICK_LOOK,
     }
   ), [wordOptions, selectedWordId])
 
@@ -69,7 +69,7 @@ export default function SiderContent() {
     )))
   }, [])
 
-  const processSentence = useCallback((text: string, bookId: string) => {
+  const processSentence = useCallback((text: string, bookId: string, contextBefore?: string, contextAfter?: string) => {
     if (speak && text && ttsGlobalConfig.autoSentenceTTS) speak(text)
     if (currentSentence.current === text) return
 
@@ -123,7 +123,7 @@ export default function SiderContent() {
           model: parseModel,
           outputType: option.type,
           instructions: assemblePrompt(option.rulePrompt, OUTPUT_PROMPT[option.type]),
-          messages: contextMessages(text),
+          messages: contextMessages(text, contextBefore, contextAfter),
           thinking: parseThinking,
           abortSignal: controller.signal,
           onResult: result => updateAnalysis(requestId, option.id, { result }),
@@ -162,7 +162,8 @@ export default function SiderContent() {
     const { chapterIndex, lineIndex } = progress.currentLocation
     const chapter = progress.sentenceChapters[chapterIndex] ?? []
     const selectedSentence = chapter[lineIndex] ?? ''
-    const batch = collectSentenceBatch(chapter, lineIndex, batchProcessingSize)
+    const { batch, lastIndex } = collectSentenceBatch(chapter, lineIndex, batchProcessingSize)
+    const { before, after } = collectSurroundingContext(chapter, lineIndex, lastIndex)
 
     setBookmarkInfo({
       bookId: progress.bookId,
@@ -170,7 +171,7 @@ export default function SiderContent() {
       chapterIndex,
       lineIndex,
     })
-    processSentence(batch, progress.bookId)
+    processSentence(batch, progress.bookId, before, after)
   }, [batchProcessingSize, processSentence])
 
   useEffect(() => {
@@ -310,15 +311,43 @@ function createCacheParams(
   }
 }
 
-function collectSentenceBatch(chapter: string[], startIndex: number, batchSize: number): string {
+function collectSentenceBatch(chapter: string[], startIndex: number, batchSize: number): { batch: string; lastIndex: number } {
   const selected: string[] = []
+  let lastIndex = startIndex
 
   for (let index = startIndex; index < chapter.length && selected.length < batchSize; index += 1) {
     const text = chapter[index]
-    if (text?.trim()) selected.push(text)
+    if (text?.trim()) {
+      selected.push(text)
+      lastIndex = index
+    }
   }
 
-  return selected.join('\n')
+  return { batch: selected.join('\n'), lastIndex }
+}
+
+function collectSurroundingContext(
+  chapter: string[],
+  startIndex: number,
+  lastIndex: number,
+  windowSize = 2
+): { before?: string; after?: string } {
+  const beforeLines: string[] = []
+  for (let i = startIndex - 1; i >= 0 && beforeLines.length < windowSize; i -= 1) {
+    const text = chapter[i]?.trim()
+    if (text) beforeLines.unshift(text)
+  }
+
+  const afterLines: string[] = []
+  for (let i = lastIndex + 1; i < chapter.length && afterLines.length < windowSize; i += 1) {
+    const text = chapter[i]?.trim()
+    if (text) afterLines.push(text)
+  }
+
+  return {
+    before: beforeLines.length > 0 ? beforeLines.join('\n') : undefined,
+    after: afterLines.length > 0 ? afterLines.join('\n') : undefined,
+  }
 }
 
 function isCacheable(result: AnalysisResult): boolean {

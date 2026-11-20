@@ -40,7 +40,9 @@
       "wordConfigPrompt": "单词处理规则",
       "book": "图书"
     },
-    "confirm": "确定"
+    "confirm": "确定",
+    "back": "返回",
+    "settings": "设置"
   },
   "bookDetails": {
     "title": "书籍详情",
@@ -164,7 +166,11 @@
     "shortcutTip2": "• 建议避免使用系统常用快捷键",
     "shortcutTip3": "• 按下Esc键可退出录制状态",
     "shortcutSaved": "快捷键设置已保存",
-    "pleaseRecordShortcut": "请先录制快捷键"
+    "pleaseRecordShortcut": "请先录制快捷键",
+    "modelAlreadyExists": "该模型 ID 已存在",
+    "promptNameRequired": "请填写提示词名称与内容",
+    "sentenceNameRequired": "请填写配置名称与规则提示词",
+    "wordNameRequired": "请填写单词配置名称与规则提示词"
   },
   "sider": {
     "selectSentence": "选中句子",
@@ -247,13 +253,13 @@
     "editAndChapters": "编辑与章节",
     "editInfoAndChapters": "编辑信息与章节管理",
     "deleteBook": "删除书籍",
-    "confirmDeleteBook": "再次点击确认删除《{{title}}》",
+    "confirmDeleteBook": "再次点击确认删除《{title}》",
     "confirmDelete": "确认删除",
     "save": "保存",
     "saving": "保存中...",
     "description": "内容简介",
     "noDescription": "暂无简介",
-    "chapterLabel": "共 {{count}} 章",
+    "chapterLabel": "共 {count} 章",
     "addedOn": "添加于",
     "unknownAuthor": "佚名作者",
     "untitled": "未命名书籍",
@@ -286,9 +292,9 @@
     "noHistory": "暂无历史对话",
     "inputPlaceholder": "针对当前句子或章节提问...",
     "thinkingProcess": "思考过程",
-    "thinkingDone": "思考完成 ({{seconds}}s)",
+    "thinkingDone": "思考完成 ({seconds}s)",
     "thinkingInProgress": "思考中...",
-    "chapterProgress": "第 {{current}}/{{total}} 章",
+    "chapterProgress": "第 {current}/{total} 章",
     "exportComingSoon": "单书 .rbk 导出将在下一阶段接入",
     "cover": "封面",
     "changeCover": "更换封面",
@@ -321,7 +327,7 @@
     "modelId": "模型 ID",
     "modelName": "显示名称",
     "searchModels": "搜索模型...",
-    "importSelected": "保存所选模型 ({{count}})",
+    "importSelected": "保存所选模型 ({count})",
     "noConfiguredProviders": "请先在「AI 服务商与密钥」中填写密钥并至少保留一个模型",
     "activeRule": "当前启用",
     "setAsActive": "设为当前启用",
@@ -365,7 +371,7 @@
     "typeBook": "单书备份",
     "exportedAt": "导出时间",
     "booksCount": "书籍数",
-    "booksSummary": "共 {{total}} 本（新增 {{newCount}} 本 / 重复 {{duplicateCount}} 本）",
+    "booksSummary": "共 {total} 本（新增 {newCount} 本 / 重复 {duplicateCount} 本）",
     "bookmarksCount": "书签数",
     "historiesCount": "历史会话",
     "settingsIncluded": "配置项",
@@ -378,12 +384,12 @@
     "strategySkip": "跳过已存在书籍（仅补充新书与缺失书签）",
     "strategyOverwrite": "覆盖重复书籍、进度并合并配置",
     "confirmImport": "确认恢复",
-    "exportSuccess": "备份已导出：{{filename}}",
-    "singleExportSuccess": "单书备份已导出：{{filename}}",
-    "exportFailed": "导出备份失败：{{error}}",
-    "invalidArchive": "无效的 .rbk 备份包：{{error}}",
-    "importSuccess": "恢复完成：新增 {{imported}} 本，覆盖 {{overwritten}} 本，跳过 {{skipped}} 本，新增书签 {{bookmarks}} 条",
-    "importFailed": "恢复备份失败：{{error}}",
+    "exportSuccess": "备份已导出：{filename}",
+    "singleExportSuccess": "单书备份已导出：{filename}",
+    "exportFailed": "导出备份失败：{error}",
+    "invalidArchive": "无效的 .rbk 备份包：{error}",
+    "importSuccess": "恢复完成：新增 {imported} 本，覆盖 {overwritten} 本，跳过 {skipped} 本，新增书签 {bookmarks} 条",
+    "importFailed": "恢复备份失败：{error}",
     "exportBookButton": "导出单书"
   }
 }

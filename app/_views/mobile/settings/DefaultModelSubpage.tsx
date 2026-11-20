@@ -126,9 +126,9 @@ export default function DefaultModelSubpage({ onBack }: { onBack: () => void }) 
           <>
             <SectionCard className="space-y-3">
               <div>
-                <h2 className="text-sm font-semibold">{t('settings.parseModel')}</h2>
+                <h2 className="text-sm font-semibold">{t('settings.analyticalModel')}</h2>
                 <p className="text-xs text-[var(--rb-text-secondary)] mt-0.5">
-                  {t('settings.parseModelTooltip')}
+                  {t('settings.analyticalModelTooltip')}
                 </p>
               </div>
 

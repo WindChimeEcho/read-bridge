@@ -232,7 +232,7 @@ export default function WordRulesSubpage({ onBack }: { onBack: () => void }) {
       {editorOpen && (
         <div className="fixed inset-0 z-50 flex flex-col bg-[var(--rb-bg-canvas)] text-[var(--rb-text-primary)]">
           <SubpageHeader
-            title={editingItem ? t('settings.editWordProcessing') : t('settings.addWordConfig')}
+            title={editingItem ? t('settings.editWordConfig') : t('settings.addWordConfig')}
             onBack={() => setEditorOpen(false)}
             rightSlot={
               <button
@@ -247,7 +247,7 @@ export default function WordRulesSubpage({ onBack }: { onBack: () => void }) {
           <div className="flex-1 min-h-0 flex flex-col p-4 pb-safe gap-3">
             <div>
               <label className="block text-xs font-medium text-[var(--rb-text-secondary)] mb-1">
-                {t('settings.wordName')}
+                {t('settings.wordConfigName')}
               </label>
               <input
                 type="text"
@@ -259,7 +259,7 @@ export default function WordRulesSubpage({ onBack }: { onBack: () => void }) {
 
             <div className="flex-1 min-h-0 flex flex-col">
               <label className="block text-xs font-medium text-[var(--rb-text-secondary)] mb-1">
-                {t('settings.wordPrompt')}
+                {t('settings.wordConfigPrompt')}
               </label>
               <textarea
                 value={promptInput}

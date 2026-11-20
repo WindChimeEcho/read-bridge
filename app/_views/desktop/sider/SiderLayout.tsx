@@ -77,7 +77,9 @@ export default function SiderLayout({ children }: { children: React.ReactNode })
         style={{
           backgroundColor: token.colorBgContainer,
           color: token.colorText,
-          border: `1px solid ${token.colorBorder}`,
+          borderTop: `1px solid ${token.colorBorder}`,
+          borderBottom: `1px solid ${token.colorBorder}`,
+          borderLeft: `1px solid ${token.colorBorder}`,
           borderRight: 'none',
           boxShadow: '-2px 0 6px rgba(0, 0, 0, 0.08)',
         }}

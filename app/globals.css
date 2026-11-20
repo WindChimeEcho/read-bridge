@@ -89,3 +89,15 @@
 .scrollbar-none::-webkit-scrollbar {
   display: none;
 }
+
+@media (max-width: 767px) {
+  .ant-message {
+    top: calc(env(safe-area-inset-top, 0px) + 60px) !important;
+    pointer-events: none !important;
+  }
+
+  .ant-message .ant-message-notice,
+  .ant-message .ant-message-notice-content {
+    pointer-events: none !important;
+  }
+}

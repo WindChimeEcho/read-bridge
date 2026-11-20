@@ -1,6 +1,6 @@
 'use client';
 
-import { ConfigProvider, message, theme } from 'antd';
+import { App as AntdApp, ConfigProvider, theme } from 'antd';
 import { ThemeProvider as NextThemeProvider, useTheme } from 'next-themes';
 import { useEffect, useState } from 'react';
 import { useStyleStore } from '@/store/useStyleStore';
@@ -54,6 +54,22 @@ function generateAntdTheme(currentTheme: ReadingTheme, effectiveTextColor: strin
   };
 }
 
+function NotifyRegistrar() {
+  const { message } = AntdApp.useApp();
+
+  useEffect(() => {
+    setNotifyAdapter({
+      success: (content) => { message.success(content); },
+      error: (content) => { message.error(content); },
+      warning: (content) => { message.warning(content); },
+      info: (content) => { message.info(content); },
+    });
+    return () => resetNotifyAdapter();
+  }, [message]);
+
+  return null;
+}
+
 function AntdProvider({ children }: { children: React.ReactNode }) {
   const { setTheme: setNextTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
@@ -68,16 +84,6 @@ function AntdProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     setMounted(true);
-  }, []);
-
-  useEffect(() => {
-    setNotifyAdapter({
-      success: (content) => { message.success(content); },
-      error: (content) => { message.error(content); },
-      warning: (content) => { message.warning(content); },
-      info: (content) => { message.info(content); },
-    });
-    return () => resetNotifyAdapter();
   }, []);
 
   useEffect(() => {
@@ -117,7 +123,10 @@ function AntdProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <ConfigProvider theme={generateAntdTheme(readingTheme, effectiveTextColor)}>
-      {children}
+      <AntdApp className="h-full">
+        <NotifyRegistrar />
+        {children}
+      </AntdApp>
     </ConfigProvider>
   );
 }

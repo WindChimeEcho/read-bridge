@@ -26,12 +26,22 @@ export type GenerationResponse = {
   reasoning: string
 }
 
+function isAbortLikeError(error: unknown): boolean {
+  return error instanceof Error && error.name === 'AbortError'
+}
+
 export async function generateAnalysis(request: GenerationRequest): Promise<GenerationResponse> {
   const outputType = request.outputType
   const thinkParser = createThinkStreamParser()
 
   const result = streamText({
     ...(await createRequestOptions(request)),
+    onError: ({ error }) => {
+      if (request.abortSignal?.aborted || isAbortLikeError(error)) {
+        return
+      }
+      console.error('AI stream error:', error)
+    },
   })
 
   for await (const part of result.fullStream) {

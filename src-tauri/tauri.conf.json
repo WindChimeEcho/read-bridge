@@ -2,7 +2,7 @@
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
   "productName": "read-bridge",
   "mainBinaryName": "read-bridge",
-  "version": "0.1.12",
+  "version": "0.2.0",
   "identifier": "com.WindChimeEcho.readbridge",
   "build": {
     "frontendDist": "../out",

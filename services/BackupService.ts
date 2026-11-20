@@ -25,7 +25,7 @@ import type {
 } from '@/types/llm'
 
 export const BACKUP_FORMAT_VERSION = 1
-export const BACKUP_APP_VERSION = '0.1.12'
+export const BACKUP_APP_VERSION = '0.2.0'
 export const BACKUP_MIME_TYPE = 'application/octet-stream'
 
 export type BackupExportType = 'full' | 'book'

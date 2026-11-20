@@ -6,22 +6,126 @@ on:
       - 'v*'
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
+  create-release:
+    runs-on: ubuntu-latest
+    outputs:
+      release_id: ${{ steps.create.outputs.release_id }}
+      version: ${{ steps.create.outputs.version }}
+      tag_name: ${{ steps.create.outputs.tag_name }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Create or update draft release
+        id: create
+        uses: actions/github-script@v7
+        env:
+          RELEASE_BODY: |
+            ### 更新内容
+
+            - **移动端 / H5 全面支持**：新增 `< 768px` 移动端自适应双端视图，手机浏览器直接打开 Web / H5 端即可获得完整移动阅读体验，包含独立移动书架、底部抽屉式 AI 句子/划词解析与对话、左侧目录抽屉、安全区适配及 8 大分组设置页。
+            - **三套阅读主题**：新增默认暖纸（Paper）、浅色（Light）、深色（Dark）三套主题配色。
+            - **本地数据备份与跨端迁移（`.rbk`）**：支持全量备份与单本书籍 `.rbk` 导出/导入（默认剥离 API Key，覆盖恢复时保留本地已有密钥），方便桌面端与手机 H5 之间迁移书架、进度与设置。
+            - **AI 学习体验增强**：句子解析支持附带前后文语境（Surrounding Context），新增折叠式语言学习提示词。
+            - **底层升级**：桌面端升级至 Tauri v2，重构统一跨端适配层，修复多项移动端交互与控制台告警。
+
+            ### 系统下载
+
+            - **Windows**：
+              - `*_x64-setup.exe`（安装版 / NSIS Installer）
+              - `*_x64-portable.exe`（免安装绿色版，双击直接打开 / Portable Executable）
+            - **macOS**：
+              - `*_aarch64.dmg`（Apple Silicon / M 系列芯片）
+            - **Linux**：
+              - `*.AppImage`（通用便携版 / Universal AppImage）
+            - **Web / H5**：
+              - 手机或电脑浏览器直接访问已部署的 Web 端（Vercel / Cloudflare Pages / 本地部署）即可使用完整 H5 移动端体验。
+
+            ---
+
+            ### What's New
+
+            - **Full Mobile & H5 Support**: Added an adaptive `< 768px` mobile UI for Web / H5 browsers, featuring a dedicated mobile bookshelf, bottom-sheet AI sentence/word analysis and chat, slide-out TOC drawer, safe-area support, and 8 grouped settings subpages.
+            - **3 Reading Themes**: Added Paper (default warm paper), Light, and Dark reading themes.
+            - **Local Backup & Cross-Device Migration (`.rbk`)**: Added full-library and single-book `.rbk` export/import (stripping API keys by default and preserving existing device keys on overwrite restore) for easy migration between desktop and mobile H5.
+            - **Enhanced AI Learning Experience**: Sentence analysis now supports surrounding sentence context, alongside collapsible language-learning prompts.
+            - **Core Upgrade**: Upgraded desktop runtime to Tauri v2, refactored unified cross-platform adapters, and resolved mobile interaction issues and console warnings.
+
+            ### Downloads
+
+            - **Windows**:
+              - `*_x64-setup.exe` (NSIS Installer)
+              - `*_x64-portable.exe` (Portable standalone executable, run directly without installation)
+            - **macOS**:
+              - `*_aarch64.dmg` (Apple Silicon / M-series)
+            - **Linux**:
+              - `*.AppImage` (Universal AppImage)
+            - **Web / H5**:
+              - Open the deployed Web app (Vercel / Cloudflare Pages / self-hosted) directly in a mobile or desktop browser for the full H5 mobile experience.
+
+            ---
+            **Read Bridge** - Your AI Reading Companion for Language Mastery | 您的 AI 语言学习阅读伙伴
+        with:
+          script: |
+            const fs = require('fs');
+            const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+            const version = pkg.version;
+            const tagName = context.ref.startsWith('refs/tags/')
+              ? context.ref.replace('refs/tags/', '')
+              : `v${version}`;
+            const releaseName = `Read Bridge ${tagName}`;
+            const body = process.env.RELEASE_BODY;
+
+            const { data: releases } = await github.rest.repos.listReleases({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              per_page: 100,
+            });
+
+            const existing = releases.find((r) => r.tag_name === tagName);
+            let releaseId;
+            if (existing) {
+              const { data: updated } = await github.rest.repos.updateRelease({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                release_id: existing.id,
+                name: releaseName,
+                body,
+              });
+              releaseId = updated.id;
+            } else {
+              const { data: created } = await github.rest.repos.createRelease({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                tag_name: tagName,
+                target_commitish: context.sha,
+                name: releaseName,
+                body,
+                draft: true,
+                prerelease: false,
+              });
+              releaseId = created.id;
+            }
+
+            core.setOutput('release_id', String(releaseId));
+            core.setOutput('version', version);
+            core.setOutput('tag_name', tagName);
+
   publish-tauri:
-    permissions:
-      contents: write
+    needs: create-release
     strategy:
       fail-fast: false
       matrix:
         include:
-          - platform: 'macos-latest'
-            args: '--target aarch64-apple-darwin'
-          - platform: 'macos-latest' 
-            args: '--target x86_64-apple-darwin'
-          - platform: 'ubuntu-22.04'
-            args: ''
           - platform: 'windows-latest'
-            args: ''
+            args: '--bundles nsis'
+          - platform: 'macos-latest'
+            args: '--target aarch64-apple-darwin --bundles dmg'
+          - platform: 'ubuntu-22.04'
+            args: '--bundles appimage'
 
     runs-on: ${{ matrix.platform }}
     steps:
@@ -30,13 +134,13 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 'lts/*'
+          node-version: '22'
           cache: 'npm'
 
       - name: Install Rust stable
         uses: dtolnay/rust-toolchain@stable
         with:
-          targets: ${{ matrix.platform == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
+          targets: ${{ matrix.platform == 'macos-latest' && 'aarch64-apple-darwin' || '' }}
 
       - name: Rust cache
         uses: swatinem/rust-cache@v2
@@ -47,7 +151,7 @@ jobs:
         if: matrix.platform == 'ubuntu-22.04'
         run: |
           sudo apt-get update
-          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf xdg-utils
 
       - name: Install frontend dependencies
         run: npm install
@@ -57,17 +161,73 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tagName: ${{ github.ref_name }}
-          releaseName: 'Read Bridge ${{ github.ref_name }}'
-          releaseBody: |
-            ### 系统下载 / Downloads
-            **Windows:** `.exe` (安装程序) | `.msi` (MSI包)
-            **macOS:** `_x64.dmg` (Intel处理器) | `_aarch64.dmg` (Apple Silicon)
-            **Linux:** `.AppImage` (通用应用) | `.deb` (Debian/Ubuntu)
-            
-            ---
-            **Read Bridge** - Your AI Reading Companion for Language Mastery | 您的AI语言学习阅读伙伴
-            
-          releaseDraft: true
-          prerelease: false
+          releaseId: ${{ needs.create-release.outputs.release_id }}
           args: ${{ matrix.args }}
+
+      - name: Upload Windows portable executable
+        if: matrix.platform == 'windows-latest'
+        uses: actions/github-script@v7
+        env:
+          RELEASE_ID: ${{ needs.create-release.outputs.release_id }}
+          APP_VERSION: ${{ needs.create-release.outputs.version }}
+        with:
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+
+            const exePath = path.join('src-tauri', 'target', 'release', 'read-bridge.exe');
+            if (!fs.existsSync(exePath)) {
+              throw new Error(`Portable executable not found at ${exePath}`);
+            }
+
+            const releaseId = Number(process.env.RELEASE_ID);
+            const assetName = `read-bridge_${process.env.APP_VERSION}_x64-portable.exe`;
+
+            const { data: assets } = await github.rest.repos.listReleaseAssets({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              release_id: releaseId,
+              per_page: 100,
+            });
+
+            const existing = assets.find((a) => a.name === assetName);
+            if (existing) {
+              await github.rest.repos.deleteReleaseAsset({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                asset_id: existing.id,
+              });
+            }
+
+            const data = fs.readFileSync(exePath);
+            const stats = fs.statSync(exePath);
+
+            await github.rest.repos.uploadReleaseAsset({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              release_id: releaseId,
+              name: assetName,
+              data,
+              headers: {
+                'content-type': 'application/octet-stream',
+                'content-length': stats.size,
+              },
+            });
+
+  publish-release:
+    needs: [create-release, publish-tauri]
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Publish GitHub Release
+        uses: actions/github-script@v7
+        env:
+          RELEASE_ID: ${{ needs.create-release.outputs.release_id }}
+        with:
+          script: |
+            await github.rest.repos.updateRelease({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              release_id: Number(process.env.RELEASE_ID),
+              draft: false,
+            });

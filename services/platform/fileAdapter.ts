@@ -1,4 +1,4 @@
-import { isDesktopTauri, isTauriAndroid } from '@/utils/platform'
+import { isDesktopTauri, isIOS, isTauriAndroid } from '@/utils/platform'
 
 export interface PickFileOptions {
   extensions: string[]
@@ -17,6 +17,11 @@ export interface FileAdapter {
 }
 
 const IMAGE_EXTENSIONS = new Set(['png', 'jpg', 'jpeg', 'webp', 'gif'])
+const BLOB_REVOKE_DELAY_MS = 60_000
+
+let sharedWebFileInput: HTMLInputElement | null = null
+let sharedWebFileDoc: Document | null = null
+let settlePendingPick: ((files: File[]) => void) | null = null
 
 function buildAcceptString(extensions: string[]): string {
   return extensions
@@ -28,6 +33,50 @@ function normalizeExtensions(extensions: string[]): string[] {
   return extensions
     .map(ext => ext.replace(/^\./, '').trim().toLowerCase())
     .filter(Boolean)
+}
+
+function isImageOnlyExtensions(extensions: string[]): boolean {
+  const normalizedExts = normalizeExtensions(extensions)
+  return normalizedExts.length > 0 && normalizedExts.every(ext => IMAGE_EXTENSIONS.has(ext))
+}
+
+function resolveWebAccept(extensions: string[]): string {
+  if (isIOS()) {
+    // iOS Files (UIDocumentPickerViewController) maps extensions to strict UTIs and grays out .epub/.md/.rbk.
+    return isImageOnlyExtensions(extensions) ? 'image/*' : ''
+  }
+  return buildAcceptString(extensions)
+}
+
+function getSharedWebFileInput(): HTMLInputElement {
+  const isAttached =
+    sharedWebFileInput !== null &&
+    sharedWebFileDoc === document &&
+    (typeof document.body?.contains !== 'function' || document.body.contains(sharedWebFileInput))
+
+  if (isAttached && sharedWebFileInput) {
+    return sharedWebFileInput
+  }
+
+  const input = document.createElement('input')
+  input.type = 'file'
+  input.tabIndex = -1
+  input.setAttribute?.('aria-hidden', 'true')
+  // Keep visually hidden without display:none so iOS Safari / standalone PWAs do not block .click() or drop change.
+  input.style.position = 'fixed'
+  input.style.left = '-9999px'
+  input.style.top = '0'
+  input.style.width = '1px'
+  input.style.height = '1px'
+  input.style.opacity = '0'
+  input.style.pointerEvents = 'none'
+
+  const mountTarget = document.body ?? document.documentElement
+  mountTarget?.appendChild(input)
+
+  sharedWebFileInput = input
+  sharedWebFileDoc = document
+  return input
 }
 
 function basenameFromPath(path: string): string {
@@ -70,36 +119,54 @@ const webFileAdapter: FileAdapter = {
       return Promise.resolve([])
     }
 
+    // On iOS < 16.4, cancelling the native sheet fires neither `cancel` nor `change`;
+    // settle any previous pending pick so a subsequent Import tap starts cleanly.
+    if (settlePendingPick) {
+      settlePendingPick([])
+    }
+
     return new Promise((resolve) => {
-      const input = document.createElement('input')
-      input.type = 'file'
+      const input = getSharedWebFileInput()
       input.multiple = multiple
-      const accept = buildAcceptString(extensions)
-      if (accept) input.accept = accept
+
+      const accept = resolveWebAccept(extensions)
+      if (accept) {
+        input.accept = accept
+      } else {
+        input.accept = ''
+        input.removeAttribute?.('accept')
+      }
+
+      input.value = ''
 
       let settled = false
+      const cleanup = () => {
+        input.removeEventListener('change', handleChange)
+        input.removeEventListener('cancel', handleCancel)
+        if (settlePendingPick === finalize) {
+          settlePendingPick = null
+        }
+      }
+
       const finalize = (files: File[]) => {
         if (settled) return
         settled = true
-        window.removeEventListener('focus', handleFocus)
-        input.remove()
+        cleanup()
         resolve(files)
       }
 
-      const handleFocus = () => {
-        setTimeout(() => {
-          finalize(Array.from(input.files ?? []))
-        }, 300)
+      const handleChange = () => {
+        finalize(Array.from(input.files ?? []))
       }
 
-      input.addEventListener('change', () => {
-        finalize(Array.from(input.files ?? []))
-      })
-      input.addEventListener('cancel', () => finalize([]))
-      window.addEventListener('focus', handleFocus)
+      const handleCancel = () => {
+        finalize([])
+      }
 
-      input.style.display = 'none'
-      document.body.appendChild(input)
+      input.addEventListener('change', handleChange)
+      input.addEventListener('cancel', handleCancel)
+      settlePendingPick = finalize
+
       input.click()
     })
   },
@@ -117,7 +184,7 @@ const webFileAdapter: FileAdapter = {
     document.body.appendChild(anchor)
     anchor.click()
     anchor.remove()
-    setTimeout(() => URL.revokeObjectURL(url), 1000)
+    setTimeout(() => URL.revokeObjectURL(url), BLOB_REVOKE_DELAY_MS)
     return { saved: true, location: filename }
   },
 }
@@ -173,10 +240,7 @@ const desktopTauriFileAdapter: FileAdapter = {
 
 const androidTauriFileAdapter: FileAdapter = {
   pickFiles: async ({ extensions, multiple = false }) => {
-    const normalizedExts = normalizeExtensions(extensions)
-    const isImageOnly =
-      normalizedExts.length > 0 &&
-      normalizedExts.every(ext => IMAGE_EXTENSIONS.has(ext))
+    const isImageOnly = isImageOnlyExtensions(extensions)
 
     const { showOpenFilePicker, getName, getFileMimeType, readFile } = await import(
       'tauri-plugin-android-fs-api'

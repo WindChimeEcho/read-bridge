@@ -10,6 +10,13 @@ export function isAndroid(): boolean {
   return /android/i.test(navigator.userAgent)
 }
 
+export function isIOS(): boolean {
+  if (typeof navigator === 'undefined') return false
+  const ua = navigator.userAgent || ''
+  if (/iphone|ipad|ipod/i.test(ua)) return true
+  return navigator.platform === 'MacIntel' && (navigator.maxTouchPoints ?? 0) > 1
+}
+
 export function isTauriAndroid(): boolean {
   return isTauri() && isAndroid()
 }

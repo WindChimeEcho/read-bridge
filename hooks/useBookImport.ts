@@ -16,10 +16,25 @@ export interface ImportProgress {
 }
 
 export function isSupportedBookFile(file: File): boolean {
-  const fileExtension = file.name.split('.').pop()?.toLowerCase()
+  const dotIndex = file.name.lastIndexOf('.')
+  if (dotIndex < 0) return false
+  const fileExtension = file.name.slice(dotIndex + 1).toLowerCase()
   return Object.values(BOOK_FORMAT).some(
     format => format.toLowerCase() === fileExtension
   )
+}
+
+function extractErrorMessage(error: unknown): string {
+  if (error instanceof Error && error.message) return error.message
+  if (
+    typeof error === 'object' &&
+    error !== null &&
+    'message' in error &&
+    typeof (error as { message?: unknown }).message === 'string'
+  ) {
+    return (error as { message: string }).message
+  }
+  return ''
 }
 
 export function useBookImport() {
@@ -66,11 +81,13 @@ export function useBookImport() {
           importedIds.push(id)
           notify.success(t('uploader.importSuccess', { fileName: file.name }))
         } catch (error) {
+          console.error('Failed to import book:', file.name, error)
           failedCount += 1
-          if (error instanceof Error) {
+          const errorMessage = extractErrorMessage(error)
+          if (errorMessage) {
             notify.error(t('uploader.importFailedWithError', {
               fileName: file.name,
-              error: error.message,
+              error: errorMessage,
             }))
           } else {
             notify.error(t('uploader.importFailed', { fileName: file.name }))
@@ -93,15 +110,27 @@ export function useBookImport() {
   }, [t])
 
   const pickAndImport = useCallback(async () => {
-    const files = await fileAdapter.pickFiles({
-      extensions: Object.values(BOOK_FORMAT),
-      multiple: true,
-    })
-    if (files.length === 0) {
-      return { importedIds: [], failedCount: 0 }
+    try {
+      const files = await fileAdapter.pickFiles({
+        extensions: Object.values(BOOK_FORMAT),
+        multiple: true,
+      })
+      if (files.length === 0) {
+        return { importedIds: [], failedCount: 0 }
+      }
+      return importFiles(files)
+    } catch (error) {
+      console.error('Failed to pick book files:', error)
+      const errorMessage = extractErrorMessage(error)
+      const fallbackName = t('common.entities.bookGeneric')
+      notify.error(
+        errorMessage
+          ? t('uploader.importFailedWithError', { fileName: fallbackName, error: errorMessage })
+          : t('uploader.importFailed', { fileName: fallbackName })
+      )
+      return { importedIds: [], failedCount: 1 }
     }
-    return importFiles(files)
-  }, [importFiles])
+  }, [importFiles, t])
 
   return {
     isImporting,

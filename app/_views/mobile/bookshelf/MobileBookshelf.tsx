@@ -164,10 +164,10 @@ export default function MobileBookshelf() {
               onClick={() => {
                 void pickAndImport()
               }}
-              className="mt-4 h-9 px-5 rounded-full bg-[var(--rb-accent)] text-white text-xs font-semibold flex items-center gap-1.5 active:opacity-90"
+              className="mt-4 h-9 px-5 rounded-full bg-[var(--rb-accent)] text-white text-xs font-semibold flex items-center gap-1.5 active:opacity-90 disabled:opacity-60"
             >
-              <PlusOutlined />
-              <span>{t('mobile.import')}</span>
+              {isImporting ? <LoadingOutlined /> : <PlusOutlined />}
+              <span>{isImporting ? t('mobile.importing') : t('mobile.import')}</span>
             </button>
           </div>
         ) : (

@@ -10,13 +10,15 @@ type ManifestItem = {
   properties: string
 }
 
+const HEAVY_ASSET_PATTERN = /\.(png|jpe?g|gif|webp|svg|bmp|ico|ttf|otf|woff2?|mp3|mp4|m4a|ogg|wav|webm|pdf)$/i
+
 export function initEpubBook(buffer: Buffer): FormattedBook {
-  const archive = openEpubArchive(buffer)
+  const { archive, archiveBytes } = openEpubArchive(buffer)
   const packagePath = readPackagePath(archive)
   const packageDocument = readArchiveText(archive, packagePath)
   const $package = cheerio.load(packageDocument, { xml: true })
   const manifest = readManifest($package('manifest').first())
-  const metadata = readMetadata($package('metadata').first(), archive, packagePath, manifest)
+  const metadata = readMetadata($package('metadata').first(), archive, archiveBytes, packagePath, manifest)
   const chapterList = readChapters($package, archive, packagePath, manifest)
 
   if (chapterList.length === 0) {
@@ -26,17 +28,28 @@ export function initEpubBook(buffer: Buffer): FormattedBook {
   return { metadata, chapterList }
 }
 
-function openEpubArchive(buffer: Buffer): Unzipped {
-  if (buffer.subarray(0, 4).toString('hex') !== '504b0304') {
+function openEpubArchive(buffer: Buffer): { archive: Unzipped; archiveBytes: Uint8Array } {
+  if (
+    buffer.length < 4 ||
+    buffer[0] !== 0x50 ||
+    buffer[1] !== 0x4b ||
+    buffer[2] !== 0x03 ||
+    buffer[3] !== 0x04
+  ) {
     throw new Error('Invalid EPUB format')
   }
 
+  const archiveBytes = new Uint8Array(buffer.buffer, buffer.byteOffset, buffer.byteLength)
+
   try {
-    const archive = unzipSync(new Uint8Array(buffer))
+    // Skip inflating interior images, fonts, and media during initial parse to avoid iOS Jetsam OOM.
+    const archive = unzipSync(archiveBytes, {
+      filter: file => !HEAVY_ASSET_PATTERN.test(file.name),
+    })
     if (!archive['META-INF/container.xml']) {
       throw new Error('EPUB container.xml is missing')
     }
-    return archive
+    return { archive, archiveBytes }
   } catch (error) {
     if (error instanceof Error) throw error
     throw new Error('Unable to open EPUB archive')
@@ -106,6 +119,7 @@ function parseChapter(document: string, chapterNumber: number): PlainTextChapter
 function readMetadata(
   $metadata: cheerio.Cheerio<AnyNode>,
   archive: Unzipped,
+  archiveBytes: Uint8Array,
   packagePath: string,
   manifest: ManifestItem[]
 ): Metadata {
@@ -125,13 +139,14 @@ function readMetadata(
     rights: value('dc\\:rights', 'rights'),
     identifier: value('dc\\:identifier', 'identifier'),
     language: value('dc\\:language', 'language'),
-    cover: readCover($metadata, archive, packagePath, manifest),
+    cover: readCover($metadata, archive, archiveBytes, packagePath, manifest),
   }
 }
 
 function readCover(
   $metadata: cheerio.Cheerio<AnyNode>,
   archive: Unzipped,
+  archiveBytes: Uint8Array,
   packagePath: string,
   manifest: ManifestItem[]
 ): Resource | undefined {
@@ -141,7 +156,14 @@ function readCover(
     ?? manifest.find(item => item.mediaType.startsWith('image/') && /cover/i.test(item.href))
 
   if (!coverItem) return undefined
-  const bytes = archive[resolveArchivePath(packagePath, coverItem.href)]
+  const coverPath = resolveArchivePath(packagePath, coverItem.href)
+  let bytes = archive[coverPath]
+  if (!bytes) {
+    const coverArchive = unzipSync(archiveBytes, {
+      filter: file => normalizeArchivePath(file.name) === coverPath,
+    })
+    bytes = coverArchive[coverPath] ?? Object.values(coverArchive)[0]
+  }
   if (!bytes) return undefined
 
   return {

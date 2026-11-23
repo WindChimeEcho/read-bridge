@@ -4,7 +4,9 @@ import type { FormattedBook, PlainTextChapter } from '../types/book'
 import { detectLanguage } from '../utils/franc'
 
 export function initMDBook(buffer: Buffer, name: string): FormattedBook {
-  const source = buffer.toString('utf-8')
+  const source = new TextDecoder('utf-8')
+    .decode(new Uint8Array(buffer.buffer, buffer.byteOffset, buffer.byteLength))
+    .replace(/^\uFEFF/, '')
   const tokens = new MarkdownIt().parse(source, {})
   const chapters: PlainTextChapter[] = []
   let bookTitle = name

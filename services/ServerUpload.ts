@@ -25,12 +25,21 @@ export async function handleFileUpload(
     throw new Error('Invalid file format');
   }
 
+  if (size === 0) {
+    console.error('File is empty or could not be read', name);
+    throw new Error('File is empty or could not be read');
+  }
+
   if (size > UPLOAD_CONFIG.MAX_SIZE) {
     console.error('File size too large', size);
     throw new Error('File size too large');
   }
 
-  const bytes = await file.arrayBuffer();
+  const bytes = await readFileAsArrayBuffer(file);
+  if (bytes.byteLength === 0) {
+    console.error('File content is empty', name);
+    throw new Error('File is empty or could not be read');
+  }
   const buffer = Buffer.from(bytes);
   const hash = await sha256Hex(bytes);
 
@@ -46,8 +55,30 @@ export async function handleFileUpload(
   }
 }
 
+async function readFileAsArrayBuffer(file: File): Promise<ArrayBuffer> {
+  if (typeof file.arrayBuffer === 'function') {
+    return file.arrayBuffer();
+  }
+  return new Promise<ArrayBuffer>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (reader.result instanceof ArrayBuffer) {
+        resolve(reader.result);
+      } else {
+        reject(new Error('Failed to read file as ArrayBuffer'));
+      }
+    };
+    reader.onerror = () => {
+      reject(reader.error ?? new Error('Failed to read file'));
+    };
+    reader.readAsArrayBuffer(file);
+  });
+}
+
 function getBookMimeType(file: File): BOOK_MIME_TYPE_TYPE | null {
-  const extension = file.name.split('.').pop()?.toLowerCase();
+  const dotIndex = file.name.lastIndexOf('.');
+  if (dotIndex < 0) return null;
+  const extension = file.name.slice(dotIndex + 1).toLowerCase();
 
   switch (extension) {
     case 'epub':

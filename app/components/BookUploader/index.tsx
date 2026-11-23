@@ -3,21 +3,30 @@ import { Upload } from 'antd';
 import { PlusOutlined } from '@ant-design/icons';
 import { BOOK_FORMAT } from '@/constants/book';
 import { isSupportedBookFile, useBookImport } from '@/hooks/useBookImport';
-import { useRef } from 'react';
+import { isIOS } from '@/utils/platform';
+import { useEffect, useRef, useState } from 'react';
 
 const { Dragger } = Upload;
+const DEFAULT_BOOK_ACCEPT = Object.values(BOOK_FORMAT).map(format => `.${format}`).join(',');
 
 export default function BookUploader() {
   const { importFiles } = useBookImport();
   const pendingFilesRef = useRef<File[]>([]);
   const flushScheduledRef = useRef(false);
+  const [accept, setAccept] = useState<string | undefined>(DEFAULT_BOOK_ACCEPT);
+
+  useEffect(() => {
+    if (isIOS()) {
+      setAccept(undefined);
+    }
+  }, []);
 
   const props: UploadProps = {
     name: 'file',
     multiple: true,
     showUploadList: false,
     fileList: [],
-    accept: Object.values(BOOK_FORMAT).map(format => `.${format}`).join(','),
+    accept,
     beforeUpload: (file) => {
       pendingFilesRef.current.push(file);
       if (!flushScheduledRef.current) {

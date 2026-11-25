@@ -1,5 +1,6 @@
 'use client'
 
+import { useRouter } from 'next/navigation'
 import { Menu, Button, List, Empty, Popconfirm } from 'antd'
 import { MenuFoldOutlined, MenuUnfoldOutlined, BookOutlined, DeleteOutlined } from '@ant-design/icons'
 import { Book, Bookmark } from '@/types/book'
@@ -38,7 +39,7 @@ const renderTocMenu = (
       inlineCollapsed={collapsed}
       items={menuItems}
       onClick={({ key }) => onChapterChange(parseInt(key, 10), 0)}
-      className="flex-1 overflow-auto"
+      className="flex-1 min-h-0 overflow-auto"
     />
   )
 }
@@ -50,7 +51,7 @@ const renderBookmarkList = (
   t: (path: string, params?: Record<string, string>) => string
 ) => {
   return (
-    <div className="flex-1 overflow-auto border-r border-[var(--ant-color-border)]">
+    <div className="flex-1 min-h-0 overflow-auto border-r border-[var(--ant-color-border)]">
       {bookmarks.length > 0 ? (
         <List
           size="small"
@@ -114,6 +115,7 @@ export default function ReadMenu({
   onBookmarkClick,
   onDeleteBookmark,
 }: ReadMenuProps) {
+  const router = useRouter()
   const { collapsed, setCollapsed } = useSiderStore()
   const [mode, setMode] = useState<'toc' | 'bookmark'>('toc')
   const { t } = useTranslation()
@@ -146,7 +148,7 @@ export default function ReadMenu({
 
   return (
     <div className={`flex flex-col h-full transition-all duration-300 ease-in-out ${getWidth()}`}>
-      <div className="flex mb-2">
+      <div className="flex mb-2 shrink-0">
         <Button
           type="text"
           onClick={switchToToc}
@@ -165,6 +167,17 @@ export default function ReadMenu({
       {mode === 'toc'
         ? renderTocMenu(toc, currentChapter, onChapterChange, collapsed)
         : renderBookmarkList(bookmarks, handleBookmarkClick, onDeleteBookmark, t)}
+
+      <div className="shrink-0 pt-2 mt-2 border-t border-[var(--rb-border)]">
+        <Button
+          type="text"
+          block
+          onClick={() => router.push('/')}
+          className="!px-2"
+        >
+          <span className="truncate">{t('header.bookshelf')}</span>
+        </Button>
+      </div>
     </div>
   )
 }

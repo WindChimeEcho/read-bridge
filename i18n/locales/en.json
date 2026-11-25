@@ -60,7 +60,8 @@
   },
   "header": {
     "home": "Home",
-    "reading": "Reading"
+    "reading": "Reading",
+    "bookshelf": "Bookshelf"
   },
   "settings": {
     "aiSettings": "AI Settings",

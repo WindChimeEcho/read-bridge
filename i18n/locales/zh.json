@@ -61,7 +61,8 @@
   },
   "header": {
     "home": "首页",
-    "reading": "阅读"
+    "reading": "阅读",
+    "bookshelf": "书架"
   },
   "settings": {
     "aiSettings": "AI设置",
